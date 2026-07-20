@@ -1,0 +1,1359 @@
+﻿	.target	sm_100a
+
+	.elftype	@"ET_EXEC"
+
+
+//--------------------- .text._ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_ --------------------------
+	.section	.text._ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_,"ax",@progbits
+	.align	128
+.text._ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_:
+        .type           _ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_,@function
+        .size           _ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_,(.L_x_73 - _ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_)
+        .other          _ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_,@"STO_CUDA_ENTRY STV_DEFAULT"
+_ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_:
+        /*0000*/ LDC R1, c[0x0][0x37c] ;  // 从 GPU 启动内核时准备的一张“系统配置表”中，取出一个 32 位值，放进寄存器 R1
+        /*0010*/ S2R R0, SR_TID.X ; // Special Register to Register，等同于R0 = threadIdx.x;
+        /*0020*/ S2UR UR9, SR_CgaCtaId ; // Special Register → Uniform Register（整个warp公用的寄存器）, block在cluster中的编号
+        /*0030*/ UMOV UR8, 0x400 ; // MOV理解为赋值，将立即数 0x400（十进制 1024）写入统一寄存器 UR8。
+        /*0040*/ LDCU.64 UR28, c[0x0][0x358] ; // LDC:从常量空间读取；U：uniform；.64读取64bit；UR28,从UR28开始保存。
+        /*0050*/ S2UR UR30, SR_CTAID.X ; // UR30 = blockIdx.x;
+        /*0060*/ ULEA UR8, UR9, UR8, 0x18 ; // UR8 = (UR9 << 0x18) + UR8 ；U:Uniform ；LEA：load Effective Address:计算有效地址
+        /*0070*/ SHF.R.U32.HI R0, RZ, 0x5, R0 ; // R0 = threadIdx.x >> 5 ；SHF：漏斗移位，语法上需要两个输入寄存器，组合成一个更宽的数据(R0|RZ)再移位。 ；.R: 右移 ；.U32：按无符号 32 位整数处理，高位补 0 ； .HI：取组合移位结果的高 32 位 ；RZ：零寄存器；
+        /*0080*/ SHFL.IDX PT, R0, R0, RZ, 0x1f ; // R0 = __shfl_sync(0xffffffff, R0, 0); SHFL：warp 内线程之间交换寄存器数据；.IDX：通过明确的 lane index 指定来源线程。; PT（恒真）：有效性 predicate 输出被忽略（判断）；R0(0):接收结果的寄存器; R0(1):分享的寄存器值； RZ：来源 lane 编号；0x1f：使用完整的 32-lane warp 范围。
+        /*0090*/ ISETP.NE.U32.AND P0, PT, R0, 0x9, PT ; // P0 = ((uint32_t)R0 != 9) && PT; ISETP：整数比较并设置谓词寄存器；.NE：不等于； .U32：按无符号 32 位整数比较；.AND：比较结果再与最后的谓词做 AND； 最后的 PT：恒为 true，所以 AND 不改变结果； 第一个出现的 PT：不需要另一个谓词结果，直接丢弃。如果需要的话就是if else
+        /*00a0*/ SHF.R.S32.HI R3, RZ, 0x1f, R0 ; // R3 = ((int32_t)R0) >> 31; .S32：按有符号 32 位整数处理；R3和RZ拼接，.HI（取高位）
+        /*00b0*/ LEA.HI R3, R3, R0, RZ, 0x2 ; // R3 = (R3 << 2) + R0; (R3 : RZ)，.HI（取高位）
+        /*00c0*/ SHF.R.S32.HI R3, RZ, 0x2, R3 ; // R3 = ((int32_t)R3) >> 2;
+        /*00d0*/ @!P0 BRA `(.L_x_0) ; // 分支跳转，如果 !P0，即 warp_idx == 9，则跳转到 .L_x_0；否则继续向下执行
+        /*00e0*/ ISETP.NE.U32.AND P1, PT, R0, 0x8, PT ; //  P1 = ((uint32_t)R0 != 8) && PT
+        /*00f0*/ @P1 BRA `(.L_x_1) ; // if (warp_idx != 8)  goto L_x_1;
+        /*0100*/ LDCU.64 UR4, c[0x0][0x348] ; // LDC:从常量空间读取；U：uniform；.64读取64bit；UR4,从UR4开始保存。
+        /*0110*/ BSSY.RECONVERGENT B0, `(.L_x_2) ; // 设置汇合点；BSYNC B0：不同路径重新同步； .L_x_2:汇合后的代码
+        /*0120*/ ELECT P1, URZ, PT ; // P1 = is_elected_thread(); 选出一个 active leader，leader 的 predicate 为真，其余参与线程为假，同时可返回 leader 的 lane ID。（URZ表示不保存）
+        /*0130*/ UIADD3 UR6, UP0, UPT, UR4, 0x28, URZ ; //UR6 = UR4 + 0x28 + URZ；UIADD3：U是统一寄存器，三个整数相加； UPO：判断是否溢出； UPT：不保存溢出
+        /*0140*/ UIADD3 UR10, UP1, UPT, UR4, 0xa8, URZ ;
+        /*0150*/ UIADD3 UR12, UP2, UPT, UR4, 0x128, URZ ;
+        /*0160*/ UIADD3 UR4, UP3, UPT, UR4, 0x1a8, URZ ;
+        /*0170*/ UIADD3.X UR7, UPT, UPT, URZ, UR5, URZ, UP0, !UPT ; // 这里有疑问后续处理 // UR7 = URZ + UR5 + URZ + UP0 + !UPT; .X：Extended，额外接收前一次运算产生的进位（先计算低 32 位，如果低位产生进位，就把这个进位加到高 32 位，最后将高、低位拼接成 64 位结果。）
+        /*0180*/ UIADD3.X UR11, UPT, UPT, URZ, UR5, URZ, UP1, !UPT ;
+        /*0190*/ UIADD3.X UR13, UPT, UPT, URZ, UR5, URZ, UP2, !UPT ;
+        /*01a0*/ UIADD3.X UR5, UPT, UPT, URZ, UR5, URZ, UP3, !UPT ;
+        /*01b0*/ UTMACCTL.PF [UR6] ; // UTMACCTL：Uniform Tensor Memory Access Control; .PF: Prefetch，预取； [UR6]：UR6 中保存一个地址，方括号表示访问该地址指向的内容
+        /*01c0*/ UTMACCTL.PF [UR10] ; // 预取出TMA描述符
+        /*01d0*/ UTMACCTL.PF [UR12] ;
+        /*01e0*/ UTMACCTL.PF [UR4] ;
+        /*01f0*/ @!P1 BRA `(.L_x_3) ; // 分支跳转，if !p1 = true，branch .L_x_3;
+        /*0200*/ UMOV UR4, 0x1 ; // UR4 = 0x1;
+        /*0210*/ UMOV UR6, 0x120 ;
+        /*0220*/ UIADD3 UR4, UPT, UPT, -UR4, 0x100000, URZ ; // UR4 = -UR4 + 0x100000 + 0;
+        /*0230*/ USHF.L.U32 UR5, UR4, 0xb, URZ ; // UR5 = (uint32_t)(UR4 << 11)；URZ=0，使 SHF 退化为普通左移
+        /*0240*/ USHF.L.U32 UR4, UR4, 0x1, URZ ;
+        /*0250*/ UIADD3 UR6, UPT, UPT, -UR6, 0x100000, URZ ;
+        /*0260*/ USHF.L.U32 UR7, UR6, 0xb, URZ ;
+        /*0270*/ USHF.L.U32 UR6, UR6, 0x1, URZ ;
+        /*0280*/ UMOV UR10, 0x100 ;
+        /*0290*/ UIADD3 UR10, UPT, UPT, -UR10, 0x100000, URZ ;
+        /*02a0*/ USHF.L.U32 UR11, UR10, 0xb, URZ ;
+        /*02b0*/ USHF.L.U32 UR10, UR10, 0x1, URZ ;
+        /*02c0*/ FENCE.VIEW.ASYNC.S ; // 通过 FENCE 建立相关 descriptor/view 的访问顺序
+
+        // 初始化barrier
+        /*02d0*/ SYNCS.EXCH.64 URZ, [UR8+0x13200], UR4 ; // 原子交换：将 UR4:UR5 的 64 位值写入目标地址，并将返回的旧值丢弃（URZ）
+        /*02e0*/ SYNCS.EXCH.64 URZ, [UR8+0x13218], UR6 ;
+        /*02f0*/ SYNCS.EXCH.64 URZ, [UR8+0x13208], UR4 ;
+        /*0300*/ SYNCS.EXCH.64 URZ, [UR8+0x13220], UR6 ;
+        /*0310*/ SYNCS.EXCH.64 URZ, [UR8+0x13210], UR4 ;
+        /*0320*/ SYNCS.EXCH.64 URZ, [UR8+0x13228], UR6 ;
+        /*0330*/ SYNCS.EXCH.64 URZ, [UR8+0x13230], UR4 ;
+        /*0340*/ SYNCS.EXCH.64 URZ, [UR8+0x13248], UR10 ;
+        /*0350*/ SYNCS.EXCH.64 URZ, [UR8+0x13238], UR4 ;
+        /*0360*/ SYNCS.EXCH.64 URZ, [UR8+0x13250], UR10 ;
+        /*0370*/ SYNCS.EXCH.64 URZ, [UR8+0x13240], UR4 ;
+        /*0380*/ SYNCS.EXCH.64 URZ, [UR8+0x13258], UR10 ;
+        /*0390*/ NOP ;
+.L_x_3:
+        /*03a0*/ NOP ;
+        /*03b0*/ BSYNC.RECONVERGENT B0 ;  // 设置汇合点；BSYNC B0：不同路径重新同步；
+.L_x_2:
+        /*03c0*/ BRA `(.L_x_1) ; // 跳转.L_x_1
+.L_x_0:
+        /*03d0*/ UMOV UR6, 0x1 ; 
+        /*03e0*/ UMOV UR4, 0x80 ;
+        /*03f0*/ UIADD3 UR6, UPT, UPT, -UR6, 0x100000, URZ ;
+        /*0400*/ USHF.L.U32 UR7, UR6, 0xb, URZ ;
+        /*0410*/ USHF.L.U32 UR6, UR6, 0x1, URZ ;
+        /*0420*/ UIADD3 UR4, UPT, UPT, -UR4, 0x100000, URZ ;
+        /*0430*/ USHF.L.U32 UR5, UR4, 0xb, URZ ;
+        /*0440*/ USHF.L.U32 UR4, UR4, 0x1, URZ ;
+        /*0450*/ ELECT P1, URZ, PT ;
+        /*0460*/ FENCE.VIEW.ASYNC.S ;
+        /*0470*/ SYNCS.EXCH.64 URZ, [UR8+0x13260], UR6 ;
+        /*0480*/ SYNCS.EXCH.64 URZ, [UR8+0x13270], UR4 ;
+        /*0490*/ SYNCS.EXCH.64 URZ, [UR8+0x13268], UR6 ;
+        /*04a0*/ SYNCS.EXCH.64 URZ, [UR8+0x13278], UR4 ;
+        /*04b0*/ @P1 NOP ;
+        /*04c0*/ NOP ;
+        /*04d0*/ @!P1 BRA `(.L_x_4) ;
+        /*04e0*/ UMOV UR6, 0x8 ;
+        /*04f0*/ UMOV UR4, 0x40 ;
+        /*0500*/ IMAD.MOV.U32 R5, RZ, RZ, 0xff ;
+        /*0510*/ ULEA UR5, UR9, UR4, 0x18 ;
+        /*0520*/ IMAD.MOV.U32 R7, RZ, RZ, 0x1 ;
+        /*0530*/ DEPBAR.LE SB0, 0x36 ;
+        /*0540*/ UTCATOMSWS.FIND_AND_SET.ALIGN UP0, UR4, UR6 ;
+        /*0550*/ IMAD.U32 R2, RZ, RZ, UR4 ;
+        /*0560*/ BRA.U UP0, `(.L_x_5) ;
+.L_x_6:
+        /*0570*/ UMOV UR4, 0x8 ;
+        /*0580*/ NANOSLEEP 0x64 ;
+        /*0590*/ DEPBAR.LE SB0, 0x36 ;
+        /*05a0*/ UTCATOMSWS.FIND_AND_SET.ALIGN UP0, UR4, UR4 ;
+        /*05b0*/ IMAD.U32 R2, RZ, RZ, UR4 ;
+        /*05c0*/ BRA.U !UP0, `(.L_x_6) ;
+.L_x_5:
+        /*05d0*/ SHF.L.U32 R4, R5, R2.reuse, RZ ;
+        /*05e0*/ SHF.L.U32 R5, R7, R2, RZ ;
+        /*05f0*/ IMAD.SHL.U32 R2, R2, 0x20, RZ ;
+        /*0600*/ ATOMS.OR RZ, [UR5+0x14], R4 ;
+        /*0610*/ ATOMS.OR RZ, [UR5+0x18], R5 ;
+        /*0620*/ STS [UR8+0x13280], R2 ;
+.L_x_4:
+        /*0630*/ WARPSYNC.ALL ;
+.L_x_1:
+        /*0640*/ BAR.SYNC.DEFER_BLOCKING 0x0 ;
+        /*0650*/ VIADD R2, R0, 0xfffffff6 ;
+        /*0660*/ ISETP.GE.U32.AND P1, PT, R2, 0x2, PT ;
+        /*0670*/ ACQBULK ;
+        /*0680*/ @!P1 BRA `(.L_x_7) ;
+        /*0690*/ LDC R2, c[0x0][0x380] ;
+        /*06a0*/ VIADD R18, R2, 0x3 ;
+        /*06b0*/ SHF.R.U32.HI R18, RZ, 0x2, R18 ;
+        /*06c0*/ @!P0 BRA `(.L_x_8) ;
+        /*06d0*/ ISETP.NE.U32.AND P0, PT, R0, 0x8, PT ;
+        /*06e0*/ @P0 BRA `(.L_x_9) ;
+        /*06f0*/ NOP ;
+        /*0700*/ USETMAXREG.DEALLOC.CTAPOOL 0x28 ;
+        /*0710*/ ELECT P0, URZ, PT ;
+        /*0720*/ BSSY.RECONVERGENT B0, `(.L_x_10) ;
+        /*0730*/ ISETP.LE.U32.OR P0, PT, R18, UR30, !P0 ;
+        /*0740*/ @P0 BRA `(.L_x_11) ;
+        /*0750*/ LDCU.64 UR4, c[0x0][0x348] ;
+        /*0760*/ IMAD.MOV.U32 R0, RZ, RZ, 0x2200 ;
+        /*0770*/ USHF.L.U32 UR11, UR30, 0x7, URZ ;
+        /*0780*/ UIADD3 UR9, UPT, UPT, UR8, 0x13200, URZ ;
+        /*0790*/ USHF.L.U32 UR7, UR30, 0x2, URZ ;
+        /*07a0*/ UMOV UR10, URZ ;
+        /*07b0*/ UMOV UR16, 0x0 ;
+        /*07c0*/ UMOV UR17, 0x10000000 ;
+        /*07d0*/ UMOV UR6, UR10 ;
+        /*07e0*/ UIADD3 UR12, UP0, UPT, UR4, 0x28, URZ ;
+        /*07f0*/ UIADD3 UR14, UP1, UPT, UR4, 0x1a8, URZ ;
+        /*0800*/ UIADD3.X UR13, UPT, UPT, URZ, UR5, URZ, UP0, !UPT ;
+        /*0810*/ UIADD3 UR4, UPT, UPT, UR8, 0x6000, URZ ;
+        /*0820*/ UIADD3.X UR15, UPT, UPT, URZ, UR5, URZ, UP1, !UPT ;
+        /*0830*/ UMOV UR5, UR9 ;
+        /*0840*/ UTMALDG.2D [UR8], [UR12], desc[UR16] ;
+        /*0850*/ UTMALDG.2D [UR4], [UR14], desc[UR16] ;
+        /*0860*/ SYNCS.ARRIVE.TRANS64 RZ, [UR8+0x13200], R0 ;
+        /*0870*/ NOP ;
+.L_x_11:
+        /*0880*/ NOP ;
+        /*0890*/ BSYNC.RECONVERGENT B0 ;
+.L_x_10:
+        /*08a0*/ ELECT P0, URZ, PT ;
+        /*08b0*/ ISETP.LE.U32.OR P0, PT, R18, UR30, !P0 ;
+        /*08c0*/ @P0   EXIT ;
+        /*08d0*/ ULOP3.LUT UR4, URZ, UR30, URZ, 0x33, !UPT ;
+        /*08e0*/ VIADD R0, R2, 0xffffffff ;
+        /*08f0*/ LDCU.64 UR32, c[0x0][0x348] ;
+        /*0900*/ VIADD R19, R18, UR4 ;
+        /*0910*/ UMOV UR4, URZ ;
+        /*0920*/ UMOV UR5, URZ ;
+        /*0930*/ SHF.R.U32.HI R19, RZ, 0x7, R19 ;
+.L_x_24:
+        /*0940*/ LDC.64 R4, c[0x0][0x390] ;
+        /*0950*/ USHF.L.U32 UR6, UR30, 0x2, URZ ;
+        /*0960*/ LDC.64 R2, c[0x0][0x398] ;
+        /*0970*/ IMAD.U32 R17, RZ, RZ, UR6 ;
+        /*0980*/ VIMNMX.U32 R11, PT, PT, R0, UR6, PT ;
+        /*0990*/ UMOV UR9, UR4 ;
+        /*09a0*/ LDCU UR10, c[0x0][0x384] ;
+        /*09b0*/ VIADDMNMX.U32 R21, R17.reuse, 0x3, R0.reuse, PT ;
+        /*09c0*/ VIADDMNMX.U32 R15, R17.reuse, 0x1, R0.reuse, PT ;
+        /*09d0*/ VIADDMNMX.U32 R17, R17, 0x2, R0, PT ;
+        /*09e0*/ IMAD.WIDE.U32 R12, R11, 0x4, R4 ;
+        /*09f0*/ LDG.E R12, desc[UR28][R12.64] ;
+        /*0a00*/ IMAD.WIDE.U32 R6, R21, 0x4, R2 ;
+        /*0a10*/ IMAD.WIDE.U32 R10, R11, 0x4, R2.reuse ;
+        /*0a20*/ LDG.E R6, desc[UR28][R6.64] ;
+        /*0a30*/ IMAD.WIDE.U32 R8, R15, 0x4, R2.reuse ;
+        /*0a40*/ LDG.E R10, desc[UR28][R10.64] ;
+        /*0a50*/ IMAD.WIDE.U32 R2, R17, 0x4, R2 ;
+        /*0a60*/ LDG.E R8, desc[UR28][R8.64] ;
+        /*0a70*/ IMAD.WIDE.U32 R14, R15, 0x4, R4 ;
+        /*0a80*/ LDG.E R2, desc[UR28][R2.64] ;
+        /*0a90*/ IMAD.WIDE.U32 R16, R17, 0x4, R4.reuse ;
+        /*0aa0*/ LDG.E R15, desc[UR28][R14.64] ;
+        /*0ab0*/ IMAD.WIDE.U32 R4, R21, 0x4, R4 ;
+        /*0ac0*/ LDG.E R17, desc[UR28][R16.64] ;
+        /*0ad0*/ LDG.E R4, desc[UR28][R4.64] ;
+        /*0ae0*/ UIADD3 UR4, UPT, UPT, UR4, 0x1, URZ ;
+        /*0af0*/ UIMAD.WIDE.U32 UR6, UR4, -0x55555555, URZ ;
+        /*0b00*/ USHF.R.U32.HI UR7, URZ, 0x1, UR7 ;
+        /*0b10*/ ULOP3.LUT UR6, UR7, 0x1, URZ, 0xc, !UPT ;
+        /*0b20*/ UIMAD UR16, UR7, -0x3, UR4 ;
+        /*0b30*/ ULEA UR15, UR16, UR8, 0x3 ;
+        /*0b40*/ IMAD.U32 R3, RZ, RZ, UR6 ;
+        /*0b50*/ SHF.L.U32 R5, R3, 0x1f, RZ ;
+        /*0b60*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR15+0x13218], R5 ;
+        /*0b70*/ UIADD3 UR30, UPT, UPT, UR30, 0x80, URZ ;
+        /*0b80*/ ISETP.LE.U32.AND P1, PT, R18, UR30, PT ;
+        /*0b90*/ R2UR UR7, R6 ;
+        /*0ba0*/ VIMNMX.U32 R10, PT, PT, R10, UR10, PT ;
+        /*0bb0*/ VIMNMX.U32 R3, PT, PT, R8, UR10, PT ;
+        /*0bc0*/ VIMNMX.U32 R2, PT, PT, R2, UR10, PT ;
+        /*0bd0*/ VIMNMX3.U32 R12, R15, UR10, R12, PT ;
+        /*0be0*/ VIMNMX3.U32 R2, R10, R3, R2, !PT ;
+        /*0bf0*/ R2UR UR6, R2 ;
+        /*0c00*/ VIMNMX3.U32 R4, R12, R17, R4, PT ;
+        /*0c10*/ UISETP.LT.U32.AND UP0, UPT, UR7, UR10, UPT ;
+        /*0c20*/ R2UR UR11, R4 ;
+        /*0c30*/ USEL UR7, UR7, UR10, UP0 ;
+        /*0c40*/ UISETP.LT.U32.AND UP0, UPT, UR6, UR7, UPT ;
+        /*0c50*/ USEL UR6, UR6, UR7, !UP0 ;
+        /*0c60*/ ULOP3.LUT UR11, UR11, 0xfffffffc, URZ, 0xc0, !UPT ;
+        /*0c70*/ UIADD3 UR6, UPT, UPT, UR6, 0xff, -UR11 ;
+        /*0c80*/ USHF.R.U32.HI UR10, URZ, 0x8, UR6 ;
+        /*0c90*/ @!P0 BRA `(.L_x_12) ;
+.L_x_51:
+        /*0ca0*/ @P1 BRA `(.L_x_13) ;
+        /*0cb0*/ UIADD3 UR6, UP0, UPT, UR32, 0x28, URZ ;
+        /*0cc0*/ IMAD.MOV.U32 R2, RZ, RZ, 0x2200 ;
+        /*0cd0*/ ULEA UR14, UR16, UR8, 0x9 ;
+        /*0ce0*/ UIADD3 UR24, UP1, UPT, UR32, 0x1a8, URZ ;
+        /*0cf0*/ USHF.L.U32 UR19, UR30, 0x7, URZ ;
+        /*0d00*/ ULEA UR16, UR16, UR8, 0xd ;
+        /*0d10*/ UIADD3 UR17, UPT, UPT, UR15, 0x13200, URZ ;
+        /*0d20*/ UIADD3.X UR7, UPT, UPT, URZ, UR33, URZ, UP0, !UPT ;
+        /*0d30*/ USHF.L.U32 UR23, UR30, 0x2, URZ ;
+        /*0d40*/ UIADD3 UR20, UPT, UPT, UR14, 0x6000, URZ ;
+        /*0d50*/ UIADD3.X UR25, UPT, UPT, URZ, UR33, URZ, UP1, !UPT ;
+        /*0d60*/ UMOV UR18, URZ ;
+        /*0d70*/ UMOV UR12, 0x0 ;
+        /*0d80*/ UMOV UR13, 0x10000000 ;
+        /*0d90*/ UMOV UR21, UR17 ;
+        /*0da0*/ UMOV UR22, UR18 ;
+        /*0db0*/ UTMALDG.2D [UR16], [UR6], desc[UR12] ;
+        /*0dc0*/ UTMALDG.2D [UR20], [UR24], desc[UR12] ;
+        /*0dd0*/ SYNCS.ARRIVE.TRANS64 RZ, [UR15+0x13200], R2 ;
+        /*0de0*/ NOP ;
+.L_x_13:
+        /*0df0*/ UISETP.NE.U32.AND UP0, UPT, UR10, URZ, UPT ;
+        /*0e00*/ BRA.U !UP0, `(.L_x_14) ;
+        /*0e10*/ UIADD3 UR6, UPT, UPT, UR10, -0x1, URZ ;
+        /*0e20*/ ULOP3.LUT UR31, UR10, 0x3, URZ, 0xc0, !UPT ;
+        /*0e30*/ UISETP.GE.U32.AND UP0, UPT, UR6, 0x3, UPT ;
+        /*0e40*/ UMOV UR6, URZ ;
+        /*0e50*/ BRA.U !UP0, `(.L_x_15) ;
+        /*0e60*/ ULOP3.LUT UR35, UR10, 0xfffffc, URZ, 0xc0, !UPT ;
+        /*0e70*/ UMOV UR6, URZ ;
+        /*0e80*/ UMOV UR7, URZ ;
+.L_x_20:
+        /*0e90*/ UIADD3 UR36, UPT, UPT, UR6, UR5, URZ ;
+        /*0ea0*/ UIMAD.WIDE.U32 UR12, UR36, -0x55555555, URZ ;
+        /*0eb0*/ USHF.R.U32.HI UR13, URZ, 0x1, UR13 ;
+        /*0ec0*/ ULOP3.LUT UR12, UR13, 0x1, URZ, 0xc, !UPT ;
+        /*0ed0*/ UIMAD UR13, UR13, -0x3, UR36 ;
+        /*0ee0*/ ULEA UR22, UR13, UR8, 0x3 ;
+        /*0ef0*/ IMAD.U32 R2, RZ, RZ, UR12 ;
+        /*0f00*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*0f10*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR22+0x13248], R2 ;
+        /*0f20*/ @!P0 BRA `(.L_x_16) ;
+.L_x_52:
+        /*0f30*/ UIADD3 UR20, UPT, UPT, UR36, 0x1, URZ ;
+        /*0f40*/ IMAD.MOV.U32 R4, RZ, RZ, 0x4400 ;
+        /*0f50*/ ULEA UR12, UR13, UR8, 0xe ;
+        /*0f60*/ UIMAD.WIDE.U32 UR16, UR20, -0x55555555, URZ ;
+        /*0f70*/ UIADD3 UR24, UP0, UPT, UR32, 0xa8, URZ ;
+        /*0f80*/ USHF.R.U32.HI UR17, URZ, 0x1, UR17 ;
+        /*0f90*/ ULEA UR18, UR13, UR8, 0xa ;
+        /*0fa0*/ UIMAD UR21, UR17, -0x3, UR20 ;
+        /*0fb0*/ UIADD3 UR26, UP1, UPT, UR32, 0x128, URZ ;
+        /*0fc0*/ ULOP3.LUT UR20, UR17, 0x1, URZ, 0xc, !UPT ;
+        /*0fd0*/ ULEA UR15, UR6, UR11, 0x8 ;
+        /*0fe0*/ UIADD3 UR13, UPT, UPT, UR22, 0x13230, URZ ;
+        /*0ff0*/ UIADD3.X UR25, UPT, UPT, URZ, UR33, URZ, UP0, !UPT ;
+        /*1000*/ IMAD.U32 R2, RZ, RZ, UR20 ;
+        /*1010*/ UIADD3 UR12, UPT, UPT, UR12, 0x6600, URZ ;
+        /*1020*/ UIADD3.X UR27, UPT, UPT, URZ, UR33, URZ, UP1, !UPT ;
+        /*1030*/ UIADD3 UR16, UPT, UPT, UR18, 0x12600, URZ ;
+        /*1040*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*1050*/ ULEA UR38, UR21, UR8, 0x3 ;
+        /*1060*/ UMOV UR40, 0x0 ;
+        /*1070*/ UMOV UR41, 0x10000000 ;
+        /*1080*/ UMOV UR14, URZ ;
+        /*1090*/ UMOV UR19, URZ ;
+        /*10a0*/ UMOV UR17, UR13 ;
+        /*10b0*/ UMOV UR18, UR15 ;
+        /*10c0*/ UTMALDG.2D [UR12], [UR24], desc[UR40] ;
+        /*10d0*/ UTMALDG.2D [UR16], [UR26], desc[UR40] ;
+        /*10e0*/ SYNCS.ARRIVE.TRANS64 RZ, [UR22+0x13230], R4 ;
+        /*10f0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR38+0x13248], R2 ;
+        /*1100*/ @!P0 BRA `(.L_x_17) ;
+.L_x_53:
+        /*1110*/ UIADD3 UR34, UPT, UPT, UR36, 0x2, URZ ;
+        /*1120*/ ULEA UR20, UR21, UR8, 0xe ;
+        /*1130*/ UIMAD.WIDE.U32 UR16, UR34, -0x55555555, URZ ;
+        /*1140*/ ULEA UR18, UR21, UR8, 0xa ;
+        /*1150*/ USHF.R.U32.HI UR17, URZ, 0x1, UR17 ;
+        /*1160*/ UIADD3 UR23, UPT, UPT, UR15, 0x100, URZ ;
+        /*1170*/ ULOP3.LUT UR39, UR17, 0x1, URZ, 0xc, !UPT ;
+        /*1180*/ UIMAD UR37, UR17, -0x3, UR34 ;
+        /*1190*/ UIADD3 UR21, UPT, UPT, UR38, 0x13230, URZ ;
+        /*11a0*/ UIADD3 UR20, UPT, UPT, UR20, 0x6600, URZ ;
+        /*11b0*/ IMAD.U32 R2, RZ, RZ, UR39 ;
+        /*11c0*/ UIADD3 UR16, UPT, UPT, UR18, 0x12600, URZ ;
+        /*11d0*/ ULEA UR40, UR37, UR8, 0x3 ;
+        /*11e0*/ UMOV UR12, 0x0 ;
+        /*11f0*/ UMOV UR13, 0x10000000 ;
+        /*1200*/ UMOV UR22, UR14 ;
+        /*1210*/ UMOV UR17, UR21 ;
+        /*1220*/ UMOV UR18, UR23 ;
+        /*1230*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*1240*/ UTMALDG.2D [UR20], [UR24], desc[UR12] ;
+        /*1250*/ UTMALDG.2D [UR16], [UR26], desc[UR12] ;
+        /*1260*/ SYNCS.ARRIVE.TRANS64 RZ, [UR38+0x13230], R4 ;
+        /*1270*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR40+0x13248], R2 ;
+        /*1280*/ @!P0 BRA `(.L_x_18) ;
+.L_x_54:
+        /*1290*/ UIADD3 UR34, UPT, UPT, UR36, 0x3, URZ ;
+        /*12a0*/ ULEA UR20, UR37, UR8, 0xe ;
+        /*12b0*/ UIMAD.WIDE.U32 UR16, UR34, -0x55555555, URZ ;
+        /*12c0*/ ULEA UR18, UR37, UR8, 0xa ;
+        /*12d0*/ USHF.R.U32.HI UR17, URZ, 0x1, UR17 ;
+        /*12e0*/ UIADD3 UR23, UPT, UPT, UR15, 0x200, URZ ;
+        /*12f0*/ ULOP3.LUT UR36, UR17, 0x1, URZ, 0xc, !UPT ;
+        /*1300*/ UIMAD UR34, UR17, -0x3, UR34 ;
+        /*1310*/ UIADD3 UR21, UPT, UPT, UR40, 0x13230, URZ ;
+        /*1320*/ UIADD3 UR20, UPT, UPT, UR20, 0x6600, URZ ;
+        /*1330*/ IMAD.U32 R2, RZ, RZ, UR36 ;
+        /*1340*/ UIADD3 UR16, UPT, UPT, UR18, 0x12600, URZ ;
+        /*1350*/ ULEA UR37, UR34, UR8, 0x3 ;
+        /*1360*/ UMOV UR22, UR14 ;
+        /*1370*/ UMOV UR17, UR21 ;
+        /*1380*/ UMOV UR18, UR23 ;
+        /*1390*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*13a0*/ UTMALDG.2D [UR20], [UR24], desc[UR12] ;
+        /*13b0*/ UTMALDG.2D [UR16], [UR26], desc[UR12] ;
+        /*13c0*/ SYNCS.ARRIVE.TRANS64 RZ, [UR40+0x13230], R4 ;
+        /*13d0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR37+0x13248], R2 ;
+        /*13e0*/ @!P0 BRA `(.L_x_19) ;
+.L_x_55:
+        /*13f0*/ ULEA UR20, UR34, UR8, 0xe ;
+        /*1400*/ ULEA UR16, UR34, UR8, 0xa ;
+        /*1410*/ UIADD3 UR23, UPT, UPT, UR15, 0x300, URZ ;
+        /*1420*/ UIADD3 UR21, UPT, UPT, UR37, 0x13230, URZ ;
+        /*1430*/ UIADD3 UR20, UPT, UPT, UR20, 0x6600, URZ ;
+        /*1440*/ UIADD3 UR16, UPT, UPT, UR16, 0x12600, URZ ;
+        /*1450*/ UMOV UR22, UR14 ;
+        /*1460*/ UMOV UR17, UR21 ;
+        /*1470*/ UMOV UR18, UR23 ;
+        /*1480*/ UIADD3 UR7, UPT, UPT, UR7, 0x4, URZ ;
+        /*1490*/ UTMALDG.2D [UR20], [UR24], desc[UR12] ;
+        /*14a0*/ UIADD3 UR6, UPT, UPT, UR6, 0x4, URZ ;
+        /*14b0*/ UISETP.NE.U32.AND UP0, UPT, UR7, UR35, UPT ;
+        /*14c0*/ UTMALDG.2D [UR16], [UR26], desc[UR12] ;
+        /*14d0*/ SYNCS.ARRIVE.TRANS64 RZ, [UR37+0x13230], R4 ;
+        /*14e0*/ BRA.U UP0, `(.L_x_20) ;
+        /*14f0*/ UISETP.NE.U32.AND UP0, UPT, UR31, URZ, UPT ;
+        /*1500*/ BRA.U !UP0, `(.L_x_14) ;
+.L_x_15:
+        /*1510*/ UIADD3 UR34, UPT, UPT, UR6, UR5, URZ ;
+        /*1520*/ UIMAD.WIDE.U32 UR12, UR34, -0x55555555, URZ ;
+        /*1530*/ USHF.R.U32.HI UR13, URZ, 0x1, UR13 ;
+        /*1540*/ ULOP3.LUT UR7, UR13, 0x1, URZ, 0xc, !UPT ;
+        /*1550*/ UIMAD UR13, UR13, -0x3, UR34 ;
+        /*1560*/ ULEA UR20, UR13, UR8, 0x3 ;
+        /*1570*/ IMAD.U32 R2, RZ, RZ, UR7 ;
+        /*1580*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*1590*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR20+0x13248], R2 ;
+        /*15a0*/ @!P0 BRA `(.L_x_21) ;
+.L_x_56:
+        /*15b0*/ ULEA UR12, UR13, UR8, 0xe ;
+        /*15c0*/ IMAD.MOV.U32 R4, RZ, RZ, 0x4400 ;
+        /*15d0*/ UIADD3 UR26, UP0, UPT, UR32, 0xa8, URZ ;
+        /*15e0*/ ULEA UR16, UR13, UR8, 0xa ;
+        /*15f0*/ UIADD3 UR24, UP1, UPT, UR32, 0x128, URZ ;
+        /*1600*/ ULEA UR15, UR6, UR11, 0x8 ;
+        /*1610*/ UIADD3 UR13, UPT, UPT, UR20, 0x13230, URZ ;
+        /*1620*/ UIADD3.X UR27, UPT, UPT, URZ, UR33, URZ, UP0, !UPT ;
+        /*1630*/ UIADD3 UR12, UPT, UPT, UR12, 0x6600, URZ ;
+        /*1640*/ UIADD3 UR16, UPT, UPT, UR16, 0x12600, URZ ;
+        /*1650*/ UIADD3.X UR25, UPT, UPT, URZ, UR33, URZ, UP1, !UPT ;
+        /*1660*/ UMOV UR22, 0x0 ;
+        /*1670*/ UMOV UR23, 0x10000000 ;
+        /*1680*/ UMOV UR14, URZ ;
+        /*1690*/ UMOV UR19, URZ ;
+        /*16a0*/ UMOV UR17, UR13 ;
+        /*16b0*/ UMOV UR18, UR15 ;
+        /*16c0*/ UTMALDG.2D [UR12], [UR26], desc[UR22] ;
+        /*16d0*/ UISETP.NE.U32.AND UP0, UPT, UR31, 0x1, UPT ;
+        /*16e0*/ UTMALDG.2D [UR16], [UR24], desc[UR22] ;
+        /*16f0*/ SYNCS.ARRIVE.TRANS64 RZ, [UR20+0x13230], R4 ;
+        /*1700*/ BRA.U !UP0, `(.L_x_14) ;
+        /*1710*/ UIADD3 UR11, UPT, UPT, UR34, 0x1, URZ ;
+        /*1720*/ UIMAD.WIDE.U32 UR6, UR11, -0x55555555, URZ ;
+        /*1730*/ USHF.R.U32.HI UR7, URZ, 0x1, UR7 ;
+        /*1740*/ ULOP3.LUT UR12, UR7, 0x1, URZ, 0xc, !UPT ;
+        /*1750*/ UIMAD UR6, UR7, -0x3, UR11 ;
+        /*1760*/ ULEA UR7, UR6, UR8, 0x3 ;
+        /*1770*/ IMAD.U32 R2, RZ, RZ, UR12 ;
+        /*1780*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*1790*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR7+0x13248], R2 ;
+        /*17a0*/ @!P0 BRA `(.L_x_22) ;
+.L_x_57:
+        /*17b0*/ ULEA UR20, UR6, UR8, 0xe ;
+        /*17c0*/ ULEA UR6, UR6, UR8, 0xa ;
+        /*17d0*/ UIADD3 UR23, UPT, UPT, UR15, 0x100, URZ ;
+        /*17e0*/ UIADD3 UR21, UPT, UPT, UR7, 0x13230, URZ ;
+        /*17f0*/ UIADD3 UR20, UPT, UPT, UR20, 0x6600, URZ ;
+        /*1800*/ UIADD3 UR16, UPT, UPT, UR6, 0x12600, URZ ;
+        /*1810*/ UMOV UR12, 0x0 ;
+        /*1820*/ UMOV UR13, 0x10000000 ;
+        /*1830*/ UMOV UR22, UR14 ;
+        /*1840*/ UMOV UR17, UR21 ;
+        /*1850*/ UMOV UR18, UR23 ;
+        /*1860*/ UTMALDG.2D [UR20], [UR26], desc[UR12] ;
+        /*1870*/ UISETP.NE.U32.AND UP0, UPT, UR31, 0x2, UPT ;
+        /*1880*/ UTMALDG.2D [UR16], [UR24], desc[UR12] ;
+        /*1890*/ SYNCS.ARRIVE.TRANS64 RZ, [UR7+0x13230], R4 ;
+        /*18a0*/ BRA.U !UP0, `(.L_x_14) ;
+        /*18b0*/ UIADD3 UR11, UPT, UPT, UR34, 0x2, URZ ;
+        /*18c0*/ UIMAD.WIDE.U32 UR6, UR11, -0x55555555, URZ ;
+        /*18d0*/ USHF.R.U32.HI UR7, URZ, 0x1, UR7 ;
+        /*18e0*/ ULOP3.LUT UR6, UR7, 0x1, URZ, 0xc, !UPT ;
+        /*18f0*/ UIMAD UR7, UR7, -0x3, UR11 ;
+        /*1900*/ ULEA UR11, UR7, UR8, 0x3 ;
+        /*1910*/ IMAD.U32 R2, RZ, RZ, UR6 ;
+        /*1920*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*1930*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR11+0x13248], R2 ;
+        /*1940*/ @!P0 BRA `(.L_x_23) ;
+.L_x_58:
+        /*1950*/ ULEA UR6, UR7, UR8, 0xe ;
+        /*1960*/ ULEA UR7, UR7, UR8, 0xa ;
+        /*1970*/ UIADD3 UR15, UPT, UPT, UR15, 0x200, URZ ;
+        /*1980*/ UIADD3 UR13, UPT, UPT, UR11, 0x13230, URZ ;
+        /*1990*/ UIADD3 UR12, UPT, UPT, UR6, 0x6600, URZ ;
+        /*19a0*/ UIADD3 UR16, UPT, UPT, UR7, 0x12600, URZ ;
+        /*19b0*/ UMOV UR6, 0x0 ;
+        /*19c0*/ UMOV UR7, 0x10000000 ;
+        /*19d0*/ UMOV UR17, UR13 ;
+        /*19e0*/ UMOV UR18, UR15 ;
+        /*19f0*/ UTMALDG.2D [UR12], [UR26], desc[UR6] ;
+        /*1a00*/ UTMALDG.2D [UR16], [UR24], desc[UR6] ;
+        /*1a10*/ SYNCS.ARRIVE.TRANS64 RZ, [UR11+0x13230], R4 ;
+        /*1a20*/ NOP ;
+.L_x_14:
+        /*1a30*/ ISETP.NE.U32.AND P0, PT, R19, UR9, PT ;
+        /*1a40*/ UIADD3 UR5, UPT, UPT, UR10, UR5, URZ ;
+        /*1a50*/ @!P0 EXIT ;
+        /*1a60*/ BRA `(.L_x_24) ;
+.L_x_9: // math warpgroup 路径入口；specialized warps 已在前面分流
+        /*1a70*/ ISETP.GE.U32.AND P0, PT, R0, 0x8, PT ; 
+        /*1a80*/ @P0 EXIT ; // if(warpid >= 8)退出。
+.L_x_25:
+        /*1a90*/ NOP ; // 空操作：不改变状态，仅占用一个指令发射槽位
+        /*1aa0*/ USETMAXREG.TRY_ALLOC.CTAPOOL UP0, 0xe8 ; // 寄存器重分配
+        /*1ab0*/ BRA.U !UP0, `(.L_x_25) ; // 不成功，阻塞，继续跳转到重申请。
+        /*1ac0*/ ISETP.LE.U32.AND P0, PT, R18, UR30, PT ;  // P0 = (uint32_t(R18) <= uint32_t(UR30));
+        /*1ad0*/ @P0 BRA `(.L_x_26) ; // if num_q_blocks <= blockIdx.x, 跳转.L_x_26，while循环的退出检查，相当于指令前移
+        /*1ae0*/ S2R R5, SR_LANEID ; // 把lanid保存到寄存器
+        /*1af0*/ LDC R4, c[0x0][0x380] ;  // 从常量参数区读取 seq_len，保存到 R4
+        /*1b00*/ ULOP3.LUT UR5, URZ, UR30, URZ, 0x33, !UPT ;  // 三输入 LUT 逻辑运算，0x33 等价于取第二个输入：UR5 = UR30
+        /*1b10*/ R2UR UR4, R3.reuse ; // 把warpgroup_idx 从普通寄存器转入 uniform 寄存器
+        /*1b20*/ CS2R R172, SRZ ; // R172:R173 = 0
+        /*1b30*/ LEA R2, R0, UR8, 0x7 ; // R2 = smem_base + warp_idx * 128，为当前 math warp 计算 shared-memory 地址基准
+        /*1b40*/ LEA R176, R3, UR8, 0x3 ; // R176 = smem_base + warpgroup_idx * 8，计算当前 math warpgroup 的 mbarrier 地址基准
+        /*1b50*/ VIADD R166, R18, UR5 ; // 32 位整数加法：R166 = R18 + UR5；UR5 为 uniform 操作数
+        /*1b60*/ LEA.HI R166, R166, 0x1, RZ, 0x19 ; // 计算剩余 Q-block 迭代数：R166 = (R166 >> 7) + 1 = ceil((num_q_blocks - blockIdx.x) / 128)
+        /*1b70*/ USHF.L.U32 UR4, UR4, 0x7, URZ ; // UR4 = UR4 << 7; UR4 = warpgroup_idx * 128;
+        /*1b80*/ IMAD R175, R5, 0x4, R2 ; // R175 = R5 * 4 + R2; R175 = smem_base + warp_idx * 128 + lane_idx * 4;
+        /*1b90*/ IMAD R174, R0, 0x20, R5 ; // R174 = R0 * 32 + R5; R174 = warp_idx * 32 + lane_idx;
+        /*1ba0*/ VIADD R2, R4, 0xffffffff ; // R2 = R4 - 1; R2 = seq_len - 1;
+        /*1bb0*/ VIADD R175, R175, 0x12600 ; // 加上 KV-scale 区域在 shared memory 中的起始偏移，得到当前 math 线程对应的 scale 地址
+.L_x_32:
+        /*1bc0*/ LDC.64 R16, c[0x0][0x390] ; // load 常量指针 uint32_t* cu_seq_len_k_start <指针是64bit>
+        /*1bd0*/ USHF.L.U32 UR5, UR30, 0x2, URZ ; // UR5 = UR30 << 2；UR30 是当前 block_q_idx，左移 2 等价于乘以 4，即当前 Q block 的起始 q_idx = block_q_idx * BLOCK_Q；这里 BLOCK_Q=4（）
+        /*1be0*/ UIADD3 UR9, UPT, UPT, UR5, 0x1, URZ ; // UR9 = UR5 + 1 = block_q_idx * 4 + 1；当前 Q block 中第 2 个 query 的索引
+        /*1bf0*/ UIADD3 UR10, UPT, UPT, UR5, 0x2, URZ ; // UR10 = UR5 + 2 = block_q_idx * 4 + 2；当前 Q block 中第 3 个 query 的索引
+        /*1c00*/ LDC.64 R18, c[0x0][0x398] ; // R19:R18 = cu_seq_len_k_end 指针；从 kernel 参数区 c[0x0][0x398] 读取 64 位地址
+        /*1c10*/ UIADD3 UR11, UPT, UPT, UR5, 0x3, URZ ; // UR11 = UR5 + 3 = block_q_idx * 4 + 3；当前 Q block 中第 4 个 query 的索引
+        /*1c20*/ VIMNMX.U32 R7, PT, PT, R2.reuse, UR5, PT ; // R7 = min(seq_len - 1, block_q_idx * 4 + 0)；得到第 1 个 query 的安全 q_idx，防止越界
+        /*1c30*/ VIMNMX.U32 R9, PT, PT, R2.reuse, UR9, PT ; // R9 = min(seq_len - 1, block_q_idx * 4 + 1)；得到第 2 个 query 的安全 q_idx，防止越界
+        /*1c40*/ VIMNMX.U32 R13, PT, PT, R2, UR10, PT ; // R13 = min(seq_len - 1, block_q_idx * 4 + 2)；得到第 3 个 query 的安全 q_idx，防止越界
+        /*1c50*/ VIMNMX.U32 R3, PT, PT, R2, UR11, PT ; // R3  = min(seq_len - 1, block_q_idx * 4 + 3)；得到第 4 个 query 的安全 q_idx，防止越界
+        /*1c60*/ LDC R21, c[0x0][0x384] ; // R21 = seq_len_kv；从 kernel 参数区读取 KV 序列总长度，用于后面 clamp cu_seq_len_k_start/end 防止越界
+        /*1c70*/ IMAD.WIDE.U32 R4, R7, 0x4, R16 ; // R5:R4 = cu_seq_len_k_start + R7 * 4；计算第 1 个 query 的 cu_seq_len_k_start[q_idx] 地址
+        /*1c80*/ LDG.E R4, desc[UR28][R4.64] ; // R4 = cu_seq_len_k_start[R7]；从全局内存读取第 1 个 query 的 KV 起始位置
+        /*1c90*/ IMAD.WIDE.U32 R10, R9, 0x4, R18 ; // R11:R10 = cu_seq_len_k_end + R9 * 4；计算第 2 个 query 的 cu_seq_len_k_end[q_idx] 地址
+        /*1ca0*/ IMAD.WIDE.U32 R6, R7, 0x4, R18.reuse ; // R7:R6 = cu_seq_len_k_end + R7 * 4；计算第 1 个 query 的 cu_seq_len_k_end[q_idx] 地址
+        /*1cb0*/ LDG.E R10, desc[UR28][R10.64] ; // R10 = cu_seq_len_k_end[R9]；从全局内存读取第 2 个 query 的 KV 结束位置
+        /*1cc0*/ IMAD.WIDE.U32 R14, R13, 0x4, R18 ; // R15:R14 = cu_seq_len_k_end + R13 * 4；计算第 3 个 query 的 cu_seq_len_k_end[q_idx] 地址
+        /*1cd0*/ LDG.E R6, desc[UR28][R6.64] ; // R6 = cu_seq_len_k_end[R7]；从全局内存读取第 1 个 query 的 KV 结束位置
+        /*1ce0*/ IMAD.WIDE.U32 R8, R9, 0x4, R16.reuse ; // R9:R8 = cu_seq_len_k_start + R9 * 4；计算第 2 个 query 的 cu_seq_len_k_start[q_idx] 地址
+        /*1cf0*/ LDG.E R14, desc[UR28][R14.64] ; // R14 = cu_seq_len_k_end[R13]；从全局内存读取第 3 个 query 的 KV 结束位置
+        /*1d00*/ IMAD.WIDE.U32 R12, R13, 0x4, R16 ; // R13:R12 = cu_seq_len_k_start + R13 * 4；计算第 3 个 query 的 cu_seq_len_k_start[q_idx] 地址
+        /*1d10*/ LDG.E R9, desc[UR28][R8.64] ;  // R9 = cu_seq_len_k_start[q_idx1]
+        /*1d20*/ IMAD.WIDE.U32 R18, R3.reuse, 0x4, R18 ; // R19:R18 = cu_seq_len_k_end + R3 * 4；计算第 4 个 query 的 cu_seq_len_k_end[q_idx] 地址
+        /*1d30*/ LDG.E R13, desc[UR28][R12.64] ; // R13 = cu_seq_len_k_start[q_idx2]；从全局内存读取第 3 个 query 的 KV 起始位置
+        /*1d40*/ IMAD.WIDE.U32 R16, R3, 0x4, R16 ; // R17:R16 = cu_seq_len_k_start + R3 * 4；计算第 4 个 query 的 cu_seq_len_k_start[q_idx] 地址
+        /*1d50*/ LDG.E R18, desc[UR28][R18.64] ; // R18 = cu_seq_len_k_end[q_idx3]；从全局内存读取第 4 个 query 的 KV 结束位置
+        /*1d60*/ LDG.E R16, desc[UR28][R16.64] ; // R16 = cu_seq_len_k_start[q_idx3]；从全局内存读取第 4 个 query 的 KV 起始位置
+        /*1d70*/ IMAD.HI.U32 R3, R173, -0x55555555, RZ ; // R3 = high32(R173 * 0xAAAAAAAB)；配合下一行右移得到 R173 / 3，随后计算 R173 % 3，对应 kNumKVStages=3 的 pipeline 轮转
+        /*1d80*/ SHF.R.U32.HI R20, RZ, 0x1, R3 ;  // R20 = R3 >> 1；配合上一行 magic multiply，得到 floor(R173 / 3)。R20 = R173 / 3;
+        /*1d90*/ IMAD R5, R20.reuse, -0x3, R173 ; // R5 = R173 - R20 * 3 = R173 % 3；计算当前 KV block 使用的 KV pipeline stage
+        /*1da0*/ LOP3.LUT R20, R20, 0x1, RZ, 0xc0, !PT ; // R20 = R20 & 1；取 floor(R173 / 3) 的最低位，得到 KV pipeline phase
+        /*1db0*/ SHF.L.U32 R7, R20, 0x1f, RZ ;  // R7 = R20 << 31；把 kv_phase(0/1) 放到 bit31，形成 mbarrier wait/phase-check 使用的 phase bit
+        /*1dc0*/ LEA R164, R5, UR8, 0x3 ; // R164 = UR8 + (R5 << 3)；把 kv_stage_idx 乘 8，得到 barrier 的阶段偏移；下一行再加 0x13200 形成 full_kv_barriers[kv_stage_idx] 地址
+        /*1dd0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P2, [R164+URZ+0x13200], R7 ; // 检查当前 KV stage 的 barrier 是否已切到 kv_phase；未就绪则 P2=0，后面会 sleep 后重试
+        /*1de0*/ VIADD R173, R173, 0x1 ; // R173++；推进当前 KV block 的全局序号/循环计数，用于下一轮 KV pipeline 的 stage/phase 计算
+        /*1df0*/ ISETP.NE.U32.AND P0, PT, R173, R166, PT ; // P0 = (R173 != R166)；判断当前 Q block 的 KV 子循环是否还没结束，未结束则后面回到 .L_x_32
+        /*1e00*/ VIMNMX.U32 R3, PT, PT, R10, R21.reuse, PT ; // R3  = min(seq_k_end[1], seq_len_kv)；clamp 第 2 个 query 的 KV end，防止超过 seq_len_kv
+        /*1e10*/ VIMNMX.U32 R6, PT, PT, R6, R21.reuse, PT ; // R6  = min(seq_k_end[0], seq_len_kv)；clamp 第 1 个 query 的 KV end，防止超过 seq_len_kv
+        /*1e20*/ VIMNMX.U32 R14, PT, PT, R14, R21.reuse, PT ; // R14 = min(seq_k_end[2], seq_len_kv)；clamp 第 3 个 query 的 KV end，防止超过 seq_len_kv
+        /*1e30*/ VIMNMX3.U32 R4, R9, R21, R4, PT ; // R4 = min(seq_k_start[1], seq_len_kv, seq_k_start[0])；合并前两个 query 的安全 KV start
+        /*1e40*/ VIMNMX3.U32 R3, R6, R3, R14, !PT ; // R3 = max(clamped_end[0], clamped_end[1], clamped_end[2])；合并前三个 query 的安全 KV end
+        /*1e50*/ VIMNMX.U32 R18, PT, PT, R18, R21, PT ; // R18 = min(seq_k_end[3], seq_len_kv)；clamp 第 4 个 query 的 KV end
+        /*1e60*/ VIMNMX3.U32 R4, R4, R13, R16, PT ; // R4 = min(R4, seq_k_start[2], seq_k_start[3])；合并 4 个 query 的最小 KV start
+        /*1e70*/ VIMNMX.U32 R3, PT, PT, R3, R18, !PT ; // R3 = max(R3, R18)；合并第 4 个 query 后，得到当前 Q block 的最大安全 KV end
+        /*1e80*/ LOP3.LUT R4, R4, 0xfffffffc, RZ, 0xc0, !PT ; //start = start / 4 * 4; R4 = R4 & 0xfffffffc；把当前 Q block 的最小 KV start 向下对齐到 4 的倍数
+        /*1e90*/ IADD3 R3, PT, PT, R3, 0xff, -R4 ; // R3 = end - start + 255；为后面的 >>8 做准备，相当于 ceil_div(end - start, 256)
+        /*1ea0*/ SHF.R.U32.HI R165, RZ, 0x8, R3 ; // R165 = (end - start + 255) >> 8；得到当前 Q block 需要处理的 KV block 数，等价于 ceil_div(end - start, 256)
+        /*1eb0*/ ISETP.NE.U32.AND P1, PT, R165, RZ, PT ; // P1 = (R165 != 0)；判断当前 Q block 是否有需要处理的 KV block
+        /*1ec0*/ @!P2 BRA `(.L_x_27) ; // 如果 full_kv_barrier 还没 ready，则跳到慢路径 .L_x_27 继续等待/重试
+.L_x_59:
+        /*1ed0*/ LEA R3, R5, UR8, 0x9 ; // R3 = UR8 + (q_stage_idx << 9) = smem_base + q_stage_idx * 512；计算当前 Q stage 对应的 weights shared-memory 基址偏移
+        /*1ee0*/ @!P1 BRA `(.L_x_28) ; // 如果 num_kv_blocks == 0，则跳过当前 KV block 的计算/写回，直接进入本轮收尾
+        /*1ef0*/ LDS.128 R160, [R3+0x6000] ; // 从 shared memory 的 smem_weights[q_stage_idx] 起始处读取 128 bit，写入 R160-R163；加载第 1 组 weights 到寄存器
+        /*1f00*/ IMAD.IADD R170, R174, 0x1, R4 ; // R170 = R4 + R174 = kv_start + math_thread_idx；初始化当前 math 线程负责的全局 KV token 索引
+        /*1f10*/ LEA R169, R172.reuse, UR8, 0x3 ; // R169 = UR8 + (R172 << 3)；以 num_total_kv_blocks 为起点，初始化后续 KV barrier 地址计算的基址
+        /*1f20*/ IMAD R168, R172, 0x400, R175 ; // R168 = R175 + R172 * 1024；初始化当前 KV stage 的 scale shared-memory 地址基址
+        /*1f30*/ LDS.128 R156, [R3+0x6010] ; // 从 smem_weights[q_stage_idx] + 0x10 读取 128 bit 到 R156-R159；加载第 2 组 weights
+        /*1f40*/ IMAD.MOV R171, RZ, RZ, -R165 ; // R171 = -num_kv_blocks；用负计数初始化内层 KV 循环计数器，后面每轮 +1，直到变为 0
+        /*1f50*/ LDCU.64 UR6, c[0x0][0x3a0] ; // UR7:UR6 = logits 指针；从 kernel 参数区读取 64 位输出 logits 基地址到 uniform 寄存器
+        /*1f60*/ IMAD.MOV.U32 R167, RZ, RZ, R172 ; // R167 = R172；复制当前累计 KV block 序号，作为内层 KV 循环的本地计数/阶段计算起点
+        /*1f70*/ LDS.128 R152, [R3+0x6020] ; // 加载 smem_weights[q_stage_idx] 第 3 组 weights，4 个 float -> R152-R155
+        /*1f80*/ LDS.128 R148, [R3+0x6030] ;
+        /*1f90*/ LDS.128 R144, [R3+0x6040] ;
+        /*1fa0*/ LDS.128 R140, [R3+0x6050] ;
+        /*1fb0*/ LDS.128 R136, [R3+0x6060] ;
+        /*1fc0*/ LDS.128 R132, [R3+0x6070] ;
+        /*1fd0*/ LDS.128 R36, [R3+0x6080] ;
+        /*1fe0*/ LDS.128 R40, [R3+0x6090] ;
+        /*1ff0*/ LDS.128 R44, [R3+0x60a0] ;
+        /*2000*/ LDS.128 R48, [R3+0x60b0] ;
+        /*2010*/ LDS.128 R52, [R3+0x60c0] ;
+        /*2020*/ LDS.128 R56, [R3+0x60d0] ;
+        /*2030*/ LDS.128 R60, [R3+0x60e0] ;
+        /*2040*/ LDS.128 R64, [R3+0x60f0] ;
+        /*2050*/ LDS.128 R68, [R3+0x6100] ;
+        /*2060*/ LDS.128 R72, [R3+0x6110] ;
+        /*2070*/ LDS.128 R76, [R3+0x6120] ;
+        /*2080*/ LDS.128 R80, [R3+0x6130] ;
+        /*2090*/ LDS.128 R84, [R3+0x6140] ;
+        /*20a0*/ LDS.128 R88, [R3+0x6150] ;
+        /*20b0*/ LDS.128 R92, [R3+0x6160] ;
+        /*20c0*/ LDS.128 R96, [R3+0x6170] ;
+        /*20d0*/ LDS.128 R100, [R3+0x6180] ;
+        /*20e0*/ LDS.128 R104, [R3+0x6190] ;
+        /*20f0*/ LDS.128 R108, [R3+0x61a0] ;
+        /*2100*/ LDS.128 R112, [R3+0x61b0] ;
+        /*2110*/ LDS.128 R116, [R3+0x61c0] ;
+        /*2120*/ LDS.128 R120, [R3+0x61d0] ;
+        /*2130*/ LDS.128 R124, [R3+0x61e0] ;
+        /*2140*/ LDS.128 R128, [R3+0x61f0] ; // 加载第 32 组 weights，4 个 float -> R128-R131
+.L_x_31:
+        /*2150*/ IMAD.HI.U32 R3, R167, -0x55555555, RZ ; // R3 = high32(R167 * 0xAAAAAAAB)；除以 3 的 magic-number 中间值，用于计算当前 KV block 的 stage/phase
+        /*2160*/ SHF.R.U32.HI R3, RZ, 0x1, R3 ; // R3 = R3 >> 1；配合上一行 magic multiply，得到 floor(R167 / 3)
+        /*2170*/ LOP3.LUT R5, R3.reuse, 0x1, RZ, 0xc0, !PT ; // R5 = R3 & 1 = (R167 / 3) & 1；得到当前 KV block 的 pipeline phase
+        /*2180*/ IMAD R4, R3.reuse, -0x18, R169 ;
+        /*2190*/ IMAD R3, R3, -0xc00, R168 ;
+        /*21a0*/ SHF.L.U32 R7, R5, 0x1f, RZ ;
+        /*21b0*/ LOP3.LUT R5, R167, 0x1, RZ, 0xc0, !PT ;
+        /*21c0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R4+URZ+0x13230], R7 ;
+        /*21d0*/ SHF.L.U32 R5, R5, 0x1f, RZ ;
+        /*21e0*/ @!P1 BRA `(.L_x_29) ;
+.L_x_60:
+        /*21f0*/ LDS R3, [R3] ;
+        /*2200*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R176+URZ+0x13260], R5 ;
+        /*2210*/ @!P1 BRA `(.L_x_30) ;
+.L_x_61:
+        /*2220*/ NOP ;
+        /*2230*/ SYNCS.ARRIVE.TRANS64.A1T0 RZ, [R4+URZ+0x13248], RZ ;
+        /*2240*/ IMAD.MOV.U32 R178, RZ, RZ, R170 ;
+        /*2250*/ IMAD.MOV.U32 R179, RZ, RZ, RZ ;
+        /*2260*/ VIADD R171, R171, 0x1 ;
+        /*2270*/ VIADD R167, R167, 0x1 ;
+        /*2280*/ LDTM.x32 R4, tmem[UR4] ;
+        /*2290*/ LDC R177, c[0x0][0x38c] ;
+        /*22a0*/ NOP ;
+        /*22b0*/ VIADD R169, R169, 0x8 ;
+        /*22c0*/ VIADD R168, R168, 0x400 ;
+        /*22d0*/ VIADD R170, R170, 0x100 ;
+        /*22e0*/ FMNMX R4, RZ, R4, !PT ;
+        /*22f0*/ FMNMX R5, RZ, R5, !PT ;
+        /*2300*/ FMNMX R6, RZ, R6, !PT ;
+        /*2310*/ FMNMX R7, RZ, R7, !PT ;
+        /*2320*/ FFMA2 R4, R4.F32x2.HI_LO, R160.F32x2.HI_LO, RZ.F32 ;
+        /*2330*/ FMNMX R8, RZ, R8, !PT ;
+        /*2340*/ FMNMX R9, RZ, R9, !PT ;
+        /*2350*/ FFMA2 R6, R6.F32x2.HI_LO, R162.F32x2.HI_LO, RZ.F32 ;
+        /*2360*/ FMNMX R10, RZ, R10, !PT ;
+        /*2370*/ FMNMX R11, RZ, R11, !PT ;
+        /*2380*/ FFMA2 R4, R8.F32x2.HI_LO, R156.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2390*/ FMNMX R12, RZ, R12, !PT ;
+        /*23a0*/ IMAD.WIDE.U32 R8, R177, UR5, R178 ;
+        /*23b0*/ FMNMX R13, RZ, R13, !PT ;
+        /*23c0*/ FFMA2 R6, R10.F32x2.HI_LO, R158.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*23d0*/ FMNMX R14, RZ, R14, !PT ;
+        /*23e0*/ FMNMX R15, RZ, R15, !PT ;
+        /*23f0*/ FFMA2 R4, R12.F32x2.HI_LO, R152.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2400*/ FMNMX R16, RZ, R16, !PT ;
+        /*2410*/ FMNMX R17, RZ, R17, !PT ;
+        /*2420*/ FFMA2 R6, R14.F32x2.HI_LO, R154.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2430*/ FMNMX R18, RZ, R18, !PT ;
+        /*2440*/ FMNMX R19, RZ, R19, !PT ;
+        /*2450*/ FFMA2 R4, R16.F32x2.HI_LO, R148.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2460*/ FMNMX R20, RZ, R20, !PT ;
+        /*2470*/ FMNMX R21, RZ, R21, !PT ;
+        /*2480*/ FFMA2 R6, R18.F32x2.HI_LO, R150.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2490*/ FMNMX R22, RZ, R22, !PT ;
+        /*24a0*/ FMNMX R23, RZ, R23, !PT ;
+        /*24b0*/ FFMA2 R4, R20.F32x2.HI_LO, R144.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*24c0*/ FMNMX R24, RZ, R24, !PT ;
+        /*24d0*/ FMNMX R25, RZ, R25, !PT ;
+        /*24e0*/ FFMA2 R6, R22.F32x2.HI_LO, R146.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*24f0*/ FMNMX R26, RZ, R26, !PT ;
+        /*2500*/ FMNMX R27, RZ, R27, !PT ;
+        /*2510*/ FFMA2 R4, R24.F32x2.HI_LO, R140.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2520*/ FMNMX R28, RZ, R28, !PT ;
+        /*2530*/ FMNMX R29, RZ, R29, !PT ;
+        /*2540*/ FFMA2 R6, R26.F32x2.HI_LO, R142.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2550*/ FMNMX R30, RZ, R30, !PT ;
+        /*2560*/ FMNMX R31, RZ, R31, !PT ;
+        /*2570*/ FFMA2 R4, R28.F32x2.HI_LO, R136.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2580*/ FMNMX R32, RZ, R32, !PT ;
+        /*2590*/ FMNMX R33, RZ, R33, !PT ;
+        /*25a0*/ FFMA2 R6, R30.F32x2.HI_LO, R138.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*25b0*/ FMNMX R34, RZ, R34, !PT ;
+        /*25c0*/ FMNMX R35, RZ, R35, !PT ;
+        /*25d0*/ FFMA2 R4, R32.F32x2.HI_LO, R132.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*25e0*/ LEA R180, P1, R8, UR6, 0x2 ;
+        /*25f0*/ FFMA2 R6, R34.F32x2.HI_LO, R134.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2600*/ LEA.HI.X R181, R8, UR7, R9, 0x2, P1 ;
+        /*2610*/ FADD2 R4, R4.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2620*/ FADD R4, R4, R5 ;
+        /*2630*/ FMUL R183, R3, R4 ;
+        /*2640*/ STG.E desc[UR28][R180.64], R183 ;
+        /*2650*/ NOP ;
+        /*2660*/ LDTM.x32 R4, tmem[UR4+0x20] ;
+        /*2670*/ NOP ;
+        /*2680*/ FMNMX R4, RZ, R4, !PT ;
+        /*2690*/ FMNMX R5, RZ, R5, !PT ;
+        /*26a0*/ FMNMX R6, RZ, R6, !PT ;
+        /*26b0*/ FMNMX R7, RZ, R7, !PT ;
+        /*26c0*/ FFMA2 R4, R4.F32x2.HI_LO, R36.F32x2.HI_LO, RZ.F32 ;
+        /*26d0*/ FMNMX R8, RZ, R8, !PT ;
+        /*26e0*/ FMNMX R9, RZ, R9, !PT ;
+        /*26f0*/ FFMA2 R6, R6.F32x2.HI_LO, R38.F32x2.HI_LO, RZ.F32 ;
+        /*2700*/ FMNMX R10, RZ, R10, !PT ;
+        /*2710*/ FMNMX R11, RZ, R11, !PT ;
+        /*2720*/ FFMA2 R4, R8.F32x2.HI_LO, R40.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2730*/ FMNMX R12, RZ, R12, !PT ;
+        /*2740*/ IMAD.WIDE.U32 R8, R177, UR9, R178 ;
+        /*2750*/ FMNMX R13, RZ, R13, !PT ;
+        /*2760*/ FFMA2 R6, R10.F32x2.HI_LO, R42.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2770*/ FMNMX R14, RZ, R14, !PT ;
+        /*2780*/ FMNMX R15, RZ, R15, !PT ;
+        /*2790*/ FFMA2 R4, R12.F32x2.HI_LO, R44.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*27a0*/ FMNMX R16, RZ, R16, !PT ;
+        /*27b0*/ FMNMX R17, RZ, R17, !PT ;
+        /*27c0*/ FFMA2 R6, R14.F32x2.HI_LO, R46.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*27d0*/ FMNMX R18, RZ, R18, !PT ;
+        /*27e0*/ FMNMX R19, RZ, R19, !PT ;
+        /*27f0*/ FFMA2 R4, R16.F32x2.HI_LO, R48.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2800*/ FMNMX R20, RZ, R20, !PT ;
+        /*2810*/ FMNMX R21, RZ, R21, !PT ;
+        /*2820*/ FFMA2 R6, R18.F32x2.HI_LO, R50.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2830*/ FMNMX R22, RZ, R22, !PT ;
+        /*2840*/ FMNMX R23, RZ, R23, !PT ;
+        /*2850*/ FFMA2 R4, R20.F32x2.HI_LO, R52.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2860*/ FMNMX R24, RZ, R24, !PT ;
+        /*2870*/ FMNMX R25, RZ, R25, !PT ;
+        /*2880*/ FFMA2 R6, R22.F32x2.HI_LO, R54.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2890*/ FMNMX R26, RZ, R26, !PT ;
+        /*28a0*/ FMNMX R27, RZ, R27, !PT ;
+        /*28b0*/ FFMA2 R4, R24.F32x2.HI_LO, R56.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*28c0*/ FMNMX R28, RZ, R28, !PT ;
+        /*28d0*/ FMNMX R29, RZ, R29, !PT ;
+        /*28e0*/ FFMA2 R6, R26.F32x2.HI_LO, R58.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*28f0*/ FMNMX R30, RZ, R30, !PT ;
+        /*2900*/ FMNMX R31, RZ, R31, !PT ;
+        /*2910*/ FFMA2 R4, R28.F32x2.HI_LO, R60.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2920*/ FMNMX R32, RZ, R32, !PT ;
+        /*2930*/ FMNMX R33, RZ, R33, !PT ;
+        /*2940*/ FFMA2 R6, R30.F32x2.HI_LO, R62.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2950*/ FMNMX R34, RZ, R34, !PT ;
+        /*2960*/ FMNMX R35, RZ, R35, !PT ;
+        /*2970*/ FFMA2 R4, R32.F32x2.HI_LO, R64.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2980*/ LEA R180, P1, R8, UR6, 0x2 ;
+        /*2990*/ FFMA2 R6, R34.F32x2.HI_LO, R66.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*29a0*/ LEA.HI.X R181, R8, UR7, R9, 0x2, P1 ;
+        /*29b0*/ FADD2 R4, R4.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*29c0*/ FADD R4, R4, R5 ;
+        /*29d0*/ FMUL R183, R3, R4 ;
+        /*29e0*/ STG.E desc[UR28][R180.64], R183 ;
+        /*29f0*/ NOP ;
+        /*2a00*/ LDTM.x32 R4, tmem[UR4+0x40] ;
+        /*2a10*/ NOP ;
+        /*2a20*/ FMNMX R4, RZ, R4, !PT ;
+        /*2a30*/ FMNMX R5, RZ, R5, !PT ;
+        /*2a40*/ FMNMX R6, RZ, R6, !PT ;
+        /*2a50*/ FMNMX R7, RZ, R7, !PT ;
+        /*2a60*/ FFMA2 R4, R4.F32x2.HI_LO, R68.F32x2.HI_LO, RZ.F32 ;
+        /*2a70*/ FMNMX R8, RZ, R8, !PT ;
+        /*2a80*/ FMNMX R9, RZ, R9, !PT ;
+        /*2a90*/ FFMA2 R6, R6.F32x2.HI_LO, R70.F32x2.HI_LO, RZ.F32 ;
+        /*2aa0*/ FMNMX R10, RZ, R10, !PT ;
+        /*2ab0*/ FMNMX R11, RZ, R11, !PT ;
+        /*2ac0*/ FFMA2 R4, R8.F32x2.HI_LO, R72.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2ad0*/ FMNMX R12, RZ, R12, !PT ;
+        /*2ae0*/ IMAD.WIDE.U32 R8, R177, UR10, R178 ;
+        /*2af0*/ FMNMX R13, RZ, R13, !PT ;
+        /*2b00*/ FFMA2 R6, R10.F32x2.HI_LO, R74.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2b10*/ FMNMX R14, RZ, R14, !PT ;
+        /*2b20*/ FMNMX R15, RZ, R15, !PT ;
+        /*2b30*/ FFMA2 R4, R12.F32x2.HI_LO, R76.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2b40*/ FMNMX R16, RZ, R16, !PT ;
+        /*2b50*/ FMNMX R17, RZ, R17, !PT ;
+        /*2b60*/ FFMA2 R6, R14.F32x2.HI_LO, R78.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2b70*/ FMNMX R18, RZ, R18, !PT ;
+        /*2b80*/ FMNMX R19, RZ, R19, !PT ;
+        /*2b90*/ FFMA2 R4, R16.F32x2.HI_LO, R80.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2ba0*/ FMNMX R20, RZ, R20, !PT ;
+        /*2bb0*/ FMNMX R21, RZ, R21, !PT ;
+        /*2bc0*/ FFMA2 R6, R18.F32x2.HI_LO, R82.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2bd0*/ FMNMX R22, RZ, R22, !PT ;
+        /*2be0*/ FMNMX R23, RZ, R23, !PT ;
+        /*2bf0*/ FFMA2 R4, R20.F32x2.HI_LO, R84.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2c00*/ FMNMX R24, RZ, R24, !PT ;
+        /*2c10*/ FMNMX R25, RZ, R25, !PT ;
+        /*2c20*/ FFMA2 R6, R22.F32x2.HI_LO, R86.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2c30*/ FMNMX R26, RZ, R26, !PT ;
+        /*2c40*/ FMNMX R27, RZ, R27, !PT ;
+        /*2c50*/ FFMA2 R4, R24.F32x2.HI_LO, R88.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2c60*/ FMNMX R28, RZ, R28, !PT ;
+        /*2c70*/ FMNMX R29, RZ, R29, !PT ;
+        /*2c80*/ FFMA2 R6, R26.F32x2.HI_LO, R90.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2c90*/ FMNMX R30, RZ, R30, !PT ;
+        /*2ca0*/ FMNMX R31, RZ, R31, !PT ;
+        /*2cb0*/ FFMA2 R4, R28.F32x2.HI_LO, R92.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2cc0*/ FMNMX R32, RZ, R32, !PT ;
+        /*2cd0*/ FMNMX R33, RZ, R33, !PT ;
+        /*2ce0*/ FFMA2 R6, R30.F32x2.HI_LO, R94.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2cf0*/ FMNMX R34, RZ, R34, !PT ;
+        /*2d00*/ FMNMX R35, RZ, R35, !PT ;
+        /*2d10*/ FFMA2 R4, R32.F32x2.HI_LO, R96.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2d20*/ LEA R180, P1, R8, UR6, 0x2 ;
+        /*2d30*/ FFMA2 R6, R34.F32x2.HI_LO, R98.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2d40*/ LEA.HI.X R181, R8, UR7, R9, 0x2, P1 ;
+        /*2d50*/ FADD2 R4, R4.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2d60*/ FADD R4, R4, R5 ;
+        /*2d70*/ FMUL R183, R3, R4 ;
+        /*2d80*/ STG.E desc[UR28][R180.64], R183 ;
+        /*2d90*/ NOP ;
+        /*2da0*/ LDTM.x32 R4, tmem[UR4+0x60] ;
+        /*2db0*/ NOP ;
+        /*2dc0*/ NOP ;
+        /*2dd0*/ SYNCS.ARRIVE.TRANS64.A1T0 RZ, [R176+URZ+0x13270], RZ ;
+        /*2de0*/ FMNMX R4, RZ, R4, !PT ;
+        /*2df0*/ FMNMX R5, RZ, R5, !PT ;
+        /*2e00*/ FMNMX R6, RZ, R6, !PT ;
+        /*2e10*/ FMNMX R7, RZ, R7, !PT ;
+        /*2e20*/ FFMA2 R4, R4.F32x2.HI_LO, R100.F32x2.HI_LO, RZ.F32 ;
+        /*2e30*/ FMNMX R8, RZ, R8, !PT ;
+        /*2e40*/ FMNMX R9, RZ, R9, !PT ;
+        /*2e50*/ FFMA2 R6, R6.F32x2.HI_LO, R102.F32x2.HI_LO, RZ.F32 ;
+        /*2e60*/ FMNMX R10, RZ, R10, !PT ;
+        /*2e70*/ FMNMX R11, RZ, R11, !PT ;
+        /*2e80*/ FFMA2 R4, R8.F32x2.HI_LO, R104.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2e90*/ FMNMX R12, RZ, R12, !PT ;
+        /*2ea0*/ FMNMX R13, RZ, R13, !PT ;
+        /*2eb0*/ FFMA2 R6, R10.F32x2.HI_LO, R106.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2ec0*/ FMNMX R14, RZ, R14, !PT ;
+        /*2ed0*/ FMNMX R15, RZ, R15, !PT ;
+        /*2ee0*/ FFMA2 R4, R12.F32x2.HI_LO, R108.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2ef0*/ FMNMX R16, RZ, R16, !PT ;
+        /*2f00*/ FMNMX R17, RZ, R17, !PT ;
+        /*2f10*/ FFMA2 R6, R14.F32x2.HI_LO, R110.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2f20*/ FMNMX R18, RZ, R18, !PT ;
+        /*2f30*/ FMNMX R19, RZ, R19, !PT ;
+        /*2f40*/ FFMA2 R4, R16.F32x2.HI_LO, R112.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2f50*/ FMNMX R20, RZ, R20, !PT ;
+        /*2f60*/ FMNMX R21, RZ, R21, !PT ;
+        /*2f70*/ FFMA2 R6, R18.F32x2.HI_LO, R114.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2f80*/ FMNMX R22, RZ, R22, !PT ;
+        /*2f90*/ FMNMX R23, RZ, R23, !PT ;
+        /*2fa0*/ FFMA2 R4, R20.F32x2.HI_LO, R116.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*2fb0*/ FMNMX R24, RZ, R24, !PT ;
+        /*2fc0*/ FMNMX R25, RZ, R25, !PT ;
+        /*2fd0*/ FFMA2 R6, R22.F32x2.HI_LO, R118.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*2fe0*/ FMNMX R26, RZ, R26, !PT ;
+        /*2ff0*/ FMNMX R27, RZ, R27, !PT ;
+        /*3000*/ FFMA2 R4, R24.F32x2.HI_LO, R120.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*3010*/ FMNMX R28, RZ, R28, !PT ;
+        /*3020*/ FMNMX R29, RZ, R29, !PT ;
+        /*3030*/ FFMA2 R6, R26.F32x2.HI_LO, R122.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*3040*/ FMNMX R30, RZ, R30, !PT ;
+        /*3050*/ FMNMX R31, RZ, R31, !PT ;
+        /*3060*/ FFMA2 R28, R28.F32x2.HI_LO, R124.F32x2.HI_LO, R4.F32x2.HI_LO ;
+        /*3070*/ FMNMX R32, RZ, R32, !PT ;
+        /*3080*/ IMAD.WIDE.U32 R4, R177, UR11, R178 ;
+        /*3090*/ FMNMX R33, RZ, R33, !PT ;
+        /*30a0*/ FFMA2 R6, R30.F32x2.HI_LO, R126.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*30b0*/ FMNMX R34, RZ, R34, !PT ;
+        /*30c0*/ FMNMX R35, RZ, R35, !PT ;
+        /*30d0*/ FFMA2 R28, R32.F32x2.HI_LO, R128.F32x2.HI_LO, R28.F32x2.HI_LO ;
+        /*30e0*/ FFMA2 R34, R34.F32x2.HI_LO, R130.F32x2.HI_LO, R6.F32x2.HI_LO ;
+        /*30f0*/ LEA R6, P1, R4, UR6, 0x2 ;
+        /*3100*/ FADD2 R28, R28.F32x2.HI_LO, R34.F32x2.HI_LO ;
+        /*3110*/ LEA.HI.X R7, R4, UR7, R5, 0x2, P1 ;
+        /*3120*/ ISETP.NE.U32.AND P1, PT, R171, RZ, PT ;
+        /*3130*/ FADD R28, R28, R29 ;
+        /*3140*/ FMUL R3, R3, R28 ;
+        /*3150*/ STG.E desc[UR28][R6.64], R3 ;
+        /*3160*/ NOP ;
+        /*3170*/ @P1 BRA `(.L_x_31) ;
+.L_x_28:
+        /*3180*/ SYNCS.ARRIVE.TRANS64.A1T0 RZ, [R164+URZ+0x13218], RZ ;
+        /*3190*/ UIADD3 UR30, UPT, UPT, UR30, 0x80, URZ ;
+        /*31a0*/ IMAD.IADD R172, R165, 0x1, R172 ;
+        /*31b0*/ @P0 BRA `(.L_x_32) ;
+.L_x_26: // math warpgroup收尾：同步所有math线程，仅warp 0 执行TMEM释放检查
+        /*31c0*/ BAR.SYNC.DEFER_BLOCKING 0x8, 0x100 ;
+        /*31d0*/ ISETP.NE.U32.AND P0, PT, R0, RZ, PT ;
+        /*31e0*/ @P0 EXIT ;
+        /*31f0*/ S2UR UR5, SR_CgaCtaId ;
+        /*3200*/ UMOV UR4, 0x40 ;
+        /*3210*/ NOP ;
+        /*3220*/ ULEA UR5, UR5, UR4, 0x18 ;
+        /*3230*/ LDS R0, [UR5+0x14] ;
+        /*3240*/ LOP3.LUT R0, R0, 0xff, RZ, 0xc0, !PT ;
+        /*3250*/ ISETP.NE.AND P0, PT, R0, 0xff, PT ;
+        /*3260*/ @P0 BRA `(.L_x_33) ;
+        /*3270*/ LDS R0, [UR5+0x18] ;
+        /*3280*/ LOP3.LUT R0, R0, 0x1, RZ, 0xc0, !PT ;
+        /*3290*/ ISETP.NE.AND P0, PT, R0, 0x1, PT ;
+        /*32a0*/ @P0 BRA `(.L_x_34) ;
+        /*32b0*/ S2R R0, SR_LANEID ;
+        /*32c0*/ IMAD.MOV.U32 R3, RZ, RZ, -0x100 ;
+        /*32d0*/ VOTEU.ANY UR4, UPT, PT ;
+        /*32e0*/ IMAD.MOV.U32 R4, RZ, RZ, -0x2 ;
+        /*32f0*/ UFLO.U32 UR4, UR4 ;
+        /*3300*/ REDUX UR6, R3 ;
+        /*3310*/ REDUX UR7, R4 ;
+        /*3320*/ ISETP.EQ.U32.AND P0, PT, R0, UR4, PT ;
+        /*3330*/ IMAD.U32 R0, RZ, RZ, UR6 ;
+        /*3340*/ UMOV UR4, 0xffffff00 ;
+        /*3350*/ IMAD.U32 R2, RZ, RZ, UR7 ;
+        /*3360*/ UTCATOMSWS.AND URZ, UR4 ;
+        /*3370*/ @P0 ATOMS.AND RZ, [UR5+0x14], R0 ;
+        /*3380*/ @P0 ATOMS.AND RZ, [UR5+0x18], R2 ;
+        /*3390*/ BRA `(.L_x_35) ;
+.L_x_34:
+        /*33a0*/ MOV R2, 0x33c0 ;
+        /*33b0*/ CALL.REL.NOINC `($__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc) ;
+        /*33c0*/ BRA `(.L_x_35) ;
+.L_x_33:
+        /*33d0*/ MOV R2, 0x33f0 ;
+        /*33e0*/ CALL.REL.NOINC `($__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced) ;
+.L_x_35:
+        /*33f0*/ NOP ;
+        /*3400*/ EXIT ;
+.L_x_8:
+        /*3410*/ NOP ;
+        /*3420*/ USETMAXREG.DEALLOC.CTAPOOL 0x28 ;
+        /*3430*/ LDS R0, [UR8+0x13280] ;
+        /*3440*/ ISETP.NE.U32.AND P0, PT, R0, RZ, PT ;
+        /*3450*/ @!P0 BRA `(.L_x_36) ;
+        /*3460*/ BPT.TRAP 0x1 ;
+.L_x_36:
+        /*3470*/ ISETP.LE.U32.AND P0, PT, R18, UR30, PT ;
+        /*3480*/ @P0 EXIT ;
+        /*3490*/ ULOP3.LUT UR4, URZ, UR30, URZ, 0x33, !UPT ;
+        /*34a0*/ UMOV UR5, URZ ;
+        /*34b0*/ VIADD R0, R18, UR4 ;
+        /*34c0*/ UMOV UR4, URZ ;
+        /*34d0*/ VIADD R18, R2, 0xffffffff ;
+        /*34e0*/ SHF.R.U32.HI R0, RZ, 0x7, R0 ;
+.L_x_50:
+        /*34f0*/ LDC.64 R2, c[0x0][0x398] ;
+        /*3500*/ USHF.L.U32 UR6, UR30, 0x2, URZ ;
+        /*3510*/ LDCU UR10, c[0x0][0x384] ;
+        /*3520*/ IMAD.U32 R17, RZ, RZ, UR6 ;
+        /*3530*/ LDC.64 R4, c[0x0][0x390] ;
+        /*3540*/ VIMNMX.U32 R9, PT, PT, R18, UR6, PT ;
+        /*3550*/ VIADDMNMX.U32 R19, R17.reuse, 0x3, R18.reuse, PT ;
+        /*3560*/ VIADDMNMX.U32 R15, R17.reuse, 0x1, R18.reuse, PT ;
+        /*3570*/ VIADDMNMX.U32 R17, R17, 0x2, R18, PT ;
+        /*3580*/ IMAD.WIDE.U32 R6, R19, 0x4, R2 ;
+        /*3590*/ LDG.E R6, desc[UR28][R6.64] ;
+        /*35a0*/ IMAD.WIDE.U32 R12, R15, 0x4, R2 ;
+        /*35b0*/ IMAD.WIDE.U32 R10, R9.reuse, 0x4, R4 ;
+        /*35c0*/ LDG.E R12, desc[UR28][R12.64] ;
+        /*35d0*/ IMAD.WIDE.U32 R8, R9, 0x4, R2.reuse ;
+        /*35e0*/ LDG.E R10, desc[UR28][R10.64] ;
+        /*35f0*/ IMAD.WIDE.U32 R2, R17, 0x4, R2 ;
+        /*3600*/ LDG.E R8, desc[UR28][R8.64] ;
+        /*3610*/ IMAD.WIDE.U32 R14, R15, 0x4, R4 ;
+        /*3620*/ LDG.E R2, desc[UR28][R2.64] ;
+        /*3630*/ IMAD.WIDE.U32 R16, R17, 0x4, R4.reuse ;
+        /*3640*/ LDG.E R15, desc[UR28][R14.64] ;
+        /*3650*/ IMAD.WIDE.U32 R4, R19, 0x4, R4 ;
+        /*3660*/ LDG.E R17, desc[UR28][R16.64] ;
+        /*3670*/ LDG.E R4, desc[UR28][R4.64] ;
+        /*3680*/ UIMAD.WIDE.U32 UR6, UR4, -0x55555555, URZ ;
+        /*3690*/ USHF.R.U32.HI UR7, URZ, 0x1, UR7 ;
+        /*36a0*/ ULOP3.LUT UR6, UR7, 0x1, URZ, 0xc0, !UPT ;
+        /*36b0*/ UIMAD UR14, UR7, -0x3, UR4 ;
+        /*36c0*/ ULEA UR22, UR14, UR8, 0x3 ;
+        /*36d0*/ R2UR UR7, R6 ;
+        /*36e0*/ IMAD.U32 R6, RZ, RZ, UR6 ;
+        /*36f0*/ SHF.L.U32 R5, R6, 0x1f, RZ ;
+        /*3700*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR22+0x13200], R5 ;
+        /*3710*/ VIMNMX.U32 R3, PT, PT, R12, UR10, PT ;
+        /*3720*/ VIMNMX.U32 R8, PT, PT, R8, UR10, PT ;
+        /*3730*/ VIMNMX.U32 R2, PT, PT, R2, UR10, PT ;
+        /*3740*/ VIMNMX3.U32 R10, R15, UR10, R10, PT ;
+        /*3750*/ VIMNMX3.U32 R2, R8, R3, R2, !PT ;
+        /*3760*/ R2UR UR6, R2 ;
+        /*3770*/ VIMNMX3.U32 R4, R10, R17, R4, PT ;
+        /*3780*/ UISETP.LT.U32.AND UP0, UPT, UR7, UR10, UPT ;
+        /*3790*/ R2UR UR9, R4 ;
+        /*37a0*/ USEL UR7, UR7, UR10, UP0 ;
+        /*37b0*/ UISETP.LT.U32.AND UP0, UPT, UR6, UR7, UPT ;
+        /*37c0*/ USEL UR15, UR6, UR7, !UP0 ;
+        /*37d0*/ ULOP3.LUT UR9, UR9, 0xfffffffc, URZ, 0xc0, !UPT ;
+        /*37e0*/ UIADD3 UR15, UPT, UPT, UR15, 0xff, -UR9 ;
+        /*37f0*/ USHF.R.U32.HI UR9, URZ, 0x8, UR15 ;
+        /*3800*/ @!P0 BRA `(.L_x_37) ;
+.L_x_62:
+        /*3810*/ UISETP.NE.U32.AND UP0, UPT, UR9, URZ, UPT ;
+        /*3820*/ BRA.U !UP0, `(.L_x_38) ;
+        /*3830*/ UISETP.NE.U32.AND UP0, UPT, UR9, 0x1, UPT ;
+        /*3840*/ ULEA UR14, UR14, UR8, 0xd ;
+        /*3850*/ UMOV UR7, URZ ;
+        /*3860*/ BRA.U !UP0, `(.L_x_39) ;
+        /*3870*/ UIADD3 UR6, UPT, UPT, UR14, 0x20, URZ ;
+        /*3880*/ ULOP3.LUT UR26, UR5, 0x1, URZ, 0xc0, !UPT ;
+        /*3890*/ USHF.R.U32.HI UR6, URZ, 0x4, UR6 ;
+        /*38a0*/ USHF.R.U32.HI UR10, URZ, 0x4, UR14 ;
+        /*38b0*/ ULOP3.LUT UR12, UR6, 0x3fe2, URZ, 0xc0, !UPT ;
+        /*38c0*/ ULOP3.LUT UR27, UR9, 0xfffffe, URZ, 0xc0, !UPT ;
+        /*38d0*/ ULOP3.LUT UR31, UR26, 0x1, URZ, 0x3c, !UPT ;
+        /*38e0*/ ULOP3.LUT UR10, UR10, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*38f0*/ UMOV UR7, URZ ;
+        /*3900*/ UMOV UR6, URZ ;
+        /*3910*/ UMOV UR11, 0x80004020 ;
+        /*3920*/ UMOV UR13, 0x80004020 ;
+.L_x_46:
+        /*3930*/ UIADD3 UR20, UPT, UPT, UR7, UR5, URZ ;
+        /*3940*/ IMAD.U32 R3, RZ, RZ, UR31 ;
+        /*3950*/ UIMAD.WIDE.U32 UR16, UR20, -0x55555555, URZ ;
+        /*3960*/ SHF.L.U32 R3, R3, 0x1f, RZ ;
+        /*3970*/ USHF.R.U32.HI UR17, URZ, 0x1, UR17 ;
+        /*3980*/ ULOP3.LUT UR16, UR17, 0x1, URZ, 0xc0, !UPT ;
+        /*3990*/ UIMAD UR17, UR17, -0x3, UR20 ;
+        /*39a0*/ ULEA UR18, UR17, UR8, 0x3 ;
+        /*39b0*/ IMAD.U32 R2, RZ, RZ, UR16 ;
+        /*39c0*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*39d0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR18+0x13230], R2 ;
+        /*39e0*/ @!P0 BRA `(.L_x_40) ;
+.L_x_63:
+        /*39f0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13270], R3 ;
+        /*3a00*/ ULEA UR21, UR17, UR8, 0xe ;
+        /*3a10*/ IMAD.MOV.U32 R4, RZ, RZ, RZ ;
+        /*3a20*/ @!P0 BRA `(.L_x_41) ;
+.L_x_64:
+        /*3a30*/ UIADD3 UR16, UPT, UPT, UR21, 0x6600, URZ ;
+        /*3a40*/ IMAD.MOV.U32 R2, RZ, RZ, RZ ;
+        /*3a50*/ UIADD3 UR17, UPT, UPT, UR21, 0x6620, URZ ;
+        /*3a60*/ R2UR UR32, R4 ;
+        /*3a70*/ USHF.R.U32.HI UR16, URZ, 0x4, UR16 ;
+        /*3a80*/ NOP ;
+        /*3a90*/ R2UR UR33, R2 ;
+        /*3aa0*/ USHF.R.U32.HI UR17, URZ, 0x4, UR17 ;
+        /*3ab0*/ ULOP3.LUT UR16, UR16, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*3ac0*/ ULOP3.LUT UR18, UR17, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3ad0*/ UIADD3 UR23, UPT, UPT, UR8, 0x13260, URZ ;
+        /*3ae0*/ UMOV UR24, 0x0 ;
+        /*3af0*/ UMOV UR25, 0x8200010 ;
+        /*3b00*/ UMOV UR17, 0x80004020 ;
+        /*3b10*/ UMOV UR19, 0x80004020 ;
+        /*3b20*/ UTCQMMA gdesc[UR16], gdesc[UR10], tmem[UR32], tmem[UR24], idesc[UR25], !UPT ;
+        /*3b30*/ UTCQMMA gdesc[UR18], gdesc[UR12], tmem[UR33], tmem[UR24], idesc[UR25], UPT ;
+        /*3b40*/ UTCBAR [UR23], URZ ;
+        /*3b50*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13278], R3 ;
+        /*3b60*/ @!P0 BRA `(.L_x_42) ;
+.L_x_65:
+        /*3b70*/ UIADD3 UR20, UPT, UPT, UR20, 0x1, URZ ;
+        /*3b80*/ IMAD.MOV.U32 R2, RZ, RZ, 0x80 ;
+        /*3b90*/ UIADD3 UR18, UPT, UPT, UR21, 0x8600, URZ ;
+        /*3ba0*/ IMAD.MOV.U32 R3, RZ, RZ, 0x80 ;
+        /*3bb0*/ UIMAD.WIDE.U32 UR16, UR20, -0x55555555, URZ ;
+        /*3bc0*/ NOP ;
+        /*3bd0*/ UIADD3 UR19, UPT, UPT, UR21, 0x8620, URZ ;
+        /*3be0*/ R2UR UR25, R2 ;
+        /*3bf0*/ USHF.R.U32.HI UR17, URZ, 0x1, UR17 ;
+        /*3c00*/ R2UR UR34, R3 ;
+        /*3c10*/ USHF.R.U32.HI UR18, URZ, 0x4, UR18 ;
+        /*3c20*/ IMAD.U32 R3, RZ, RZ, UR26 ;
+        /*3c30*/ USHF.R.U32.HI UR19, URZ, 0x4, UR19 ;
+        /*3c40*/ ULOP3.LUT UR23, UR17, 0x1, URZ, 0xc0, !UPT ;
+        /*3c50*/ UIMAD UR20, UR17, -0x3, UR20 ;
+        /*3c60*/ SHF.L.U32 R3, R3, 0x1f, RZ ;
+        /*3c70*/ ULOP3.LUT UR16, UR18, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3c80*/ ULOP3.LUT UR18, UR19, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3c90*/ IMAD.U32 R2, RZ, RZ, UR23 ;
+        /*3ca0*/ UIADD3 UR21, UPT, UPT, UR8, 0x13268, URZ ;
+        /*3cb0*/ ULEA UR24, UR20, UR8, 0x3 ;
+        /*3cc0*/ UMOV UR32, 0x0 ;
+        /*3cd0*/ UMOV UR33, 0x8200010 ;
+        /*3ce0*/ UMOV UR17, 0x80004020 ;
+        /*3cf0*/ UMOV UR19, 0x80004020 ;
+        /*3d00*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*3d10*/ UTCQMMA gdesc[UR16], gdesc[UR10], tmem[UR25], tmem[UR32], idesc[UR33], !UPT ;
+        /*3d20*/ UTCQMMA gdesc[UR18], gdesc[UR12], tmem[UR34], tmem[UR32], idesc[UR33], UPT ;
+        /*3d30*/ UTCBAR [UR21], URZ ;
+        /*3d40*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR24+0x13230], R2 ;
+        /*3d50*/ @!P0 BRA `(.L_x_43) ;
+.L_x_66:
+        /*3d60*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13270], R3 ;
+        /*3d70*/ ULEA UR23, UR20, UR8, 0xe ;
+        /*3d80*/ IMAD.MOV.U32 R4, RZ, RZ, RZ ;
+        /*3d90*/ @!P0 BRA `(.L_x_44) ;
+.L_x_67:
+        /*3da0*/ UIADD3 UR16, UPT, UPT, UR23, 0x6600, URZ ;
+        /*3db0*/ IMAD.MOV.U32 R2, RZ, RZ, RZ ;
+        /*3dc0*/ UIADD3 UR17, UPT, UPT, UR23, 0x6620, URZ ;
+        /*3dd0*/ R2UR UR25, R4 ;
+        /*3de0*/ USHF.R.U32.HI UR16, URZ, 0x4, UR16 ;
+        /*3df0*/ NOP ;
+        /*3e00*/ R2UR UR32, R2 ;
+        /*3e10*/ USHF.R.U32.HI UR17, URZ, 0x4, UR17 ;
+        /*3e20*/ ULOP3.LUT UR16, UR16, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*3e30*/ ULOP3.LUT UR18, UR17, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3e40*/ UIADD3 UR24, UPT, UPT, UR8, 0x13260, URZ ;
+        /*3e50*/ UMOV UR20, 0x0 ;
+        /*3e60*/ UMOV UR21, 0x8200010 ;
+        /*3e70*/ UMOV UR17, 0x80004020 ;
+        /*3e80*/ UMOV UR19, 0x80004020 ;
+        /*3e90*/ UTCQMMA gdesc[UR16], gdesc[UR10], tmem[UR25], tmem[UR20], idesc[UR21], !UPT ;
+        /*3ea0*/ UTCQMMA gdesc[UR18], gdesc[UR12], tmem[UR32], tmem[UR20], idesc[UR21], UPT ;
+        /*3eb0*/ UIADD3 UR6, UPT, UPT, UR6, 0x2, URZ ;
+        /*3ec0*/ UTCBAR [UR24], URZ ;
+        /*3ed0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13278], R3 ;
+        /*3ee0*/ UISETP.NE.U32.AND UP0, UPT, UR6, UR27, UPT ;
+        /*3ef0*/ @!P0 BRA `(.L_x_45) ;
+.L_x_68:
+        /*3f00*/ IMAD.MOV.U32 R2, RZ, RZ, 0x80 ;
+        /*3f10*/ UIADD3 UR16, UPT, UPT, UR23, 0x8600, URZ ;
+        /*3f20*/ IMAD.MOV.U32 R3, RZ, RZ, 0x80 ;
+        /*3f30*/ UIADD3 UR17, UPT, UPT, UR23, 0x8620, URZ ;
+        /*3f40*/ NOP ;
+        /*3f50*/ R2UR UR24, R2 ;
+        /*3f60*/ USHF.R.U32.HI UR16, URZ, 0x4, UR16 ;
+        /*3f70*/ R2UR UR25, R3 ;
+        /*3f80*/ USHF.R.U32.HI UR17, URZ, 0x4, UR17 ;
+        /*3f90*/ ULOP3.LUT UR16, UR16, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3fa0*/ ULOP3.LUT UR18, UR17, 0x3fff, URZ, 0xc0, !UPT ;
+        /*3fb0*/ UIADD3 UR23, UPT, UPT, UR8, 0x13268, URZ ;
+        /*3fc0*/ UMOV UR20, 0x0 ;
+        /*3fd0*/ UMOV UR21, 0x8200010 ;
+        /*3fe0*/ UMOV UR17, 0x80004020 ;
+        /*3ff0*/ UMOV UR19, 0x80004020 ;
+        /*4000*/ UTCQMMA gdesc[UR16], gdesc[UR10], tmem[UR24], tmem[UR20], idesc[UR21], !UPT ;
+        /*4010*/ UTCQMMA gdesc[UR18], gdesc[UR12], tmem[UR25], tmem[UR20], idesc[UR21], UPT ;
+        /*4020*/ UIADD3 UR7, UPT, UPT, UR7, 0x2, URZ ;
+        /*4030*/ UTCBAR [UR23], URZ ;
+        /*4040*/ BRA.U UP0, `(.L_x_46) ;
+        /*4050*/ ULOP3.LUT UP0, URZ, UR15, 0x100, URZ, 0xc0, !UPT ;
+        /*4060*/ BRA.U !UP0, `(.L_x_38) ;
+.L_x_39:
+        /*4070*/ UIADD3 UR10, UPT, UPT, UR5, UR7, URZ ;
+        /*4080*/ UIMAD.WIDE.U32 UR6, UR10, -0x55555555, URZ ;
+        /*4090*/ USHF.R.U32.HI UR7, URZ, 0x1, UR7 ;
+        /*40a0*/ ULOP3.LUT UR6, UR7, 0x1, URZ, 0xc0, !UPT ;
+        /*40b0*/ UIMAD UR7, UR7, -0x3, UR10 ;
+        /*40c0*/ ULEA UR11, UR7, UR8, 0x3 ;
+        /*40d0*/ IMAD.U32 R2, RZ, RZ, UR6 ;
+        /*40e0*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*40f0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR11+0x13230], R2 ;
+        /*4100*/ @!P0 BRA `(.L_x_47) ;
+.L_x_69:
+        /*4110*/ ULOP3.LUT UR10, UR10, 0x1, URZ, 0xc, !UPT ;
+        /*4120*/ ULEA UR15, UR7, UR8, 0xe ;
+        /*4130*/ IMAD.U32 R2, RZ, RZ, UR10 ;
+        /*4140*/ SHF.L.U32 R2, R2, 0x1f, RZ ;
+        /*4150*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13270], R2 ;
+        /*4160*/ @!P0 BRA `(.L_x_48) ;
+.L_x_70:
+        /*4170*/ IMAD.MOV.U32 R3, RZ, RZ, RZ ;
+        /*4180*/ UIADD3 UR6, UPT, UPT, UR15, 0x6600, URZ ;
+        /*4190*/ IMAD.MOV.U32 R4, RZ, RZ, RZ ;
+        /*41a0*/ UIADD3 UR10, UPT, UPT, UR14, 0x20, URZ ;
+        /*41b0*/ NOP ;
+        /*41c0*/ UIADD3 UR7, UPT, UPT, UR15, 0x6620, URZ ;
+        /*41d0*/ R2UR UR21, R3 ;
+        /*41e0*/ USHF.R.U32.HI UR12, URZ, 0x4, UR14 ;
+        /*41f0*/ R2UR UR23, R4 ;
+        /*4200*/ USHF.R.U32.HI UR6, URZ, 0x4, UR6 ;
+        /*4210*/ USHF.R.U32.HI UR7, URZ, 0x4, UR7 ;
+        /*4220*/ USHF.R.U32.HI UR16, URZ, 0x4, UR10 ;
+        /*4230*/ ULOP3.LUT UR12, UR12, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*4240*/ ULOP3.LUT UR6, UR6, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*4250*/ ULOP3.LUT UR10, UR7, 0x3fff, URZ, 0xc0, !UPT ;
+        /*4260*/ ULOP3.LUT UR16, UR16, 0x3fe2, URZ, 0xc0, !UPT ;
+        /*4270*/ UIADD3 UR20, UPT, UPT, UR8, 0x13260, URZ ;
+        /*4280*/ UMOV UR18, 0x0 ;
+        /*4290*/ UMOV UR19, 0x8200010 ;
+        /*42a0*/ UMOV UR13, 0x80004020 ;
+        /*42b0*/ UMOV UR7, 0x80004020 ;
+        /*42c0*/ UMOV UR11, 0x80004020 ;
+        /*42d0*/ UMOV UR17, 0x80004020 ;
+        /*42e0*/ UTCQMMA gdesc[UR6], gdesc[UR12], tmem[UR21], tmem[UR18], idesc[UR19], !UPT ;
+        /*42f0*/ UTCQMMA gdesc[UR10], gdesc[UR16], tmem[UR23], tmem[UR18], idesc[UR19], UPT ;
+        /*4300*/ UTCBAR [UR20], URZ ;
+        /*4310*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [UR8+0x13278], R2 ;
+        /*4320*/ @!P0 BRA `(.L_x_49) ;
+.L_x_71:
+        /*4330*/ IMAD.MOV.U32 R2, RZ, RZ, 0x80 ;
+        /*4340*/ USHF.R.U32.HI UR12, URZ, 0x4, UR14 ;
+        /*4350*/ IMAD.MOV.U32 R3, RZ, RZ, 0x80 ;
+        /*4360*/ UIADD3 UR6, UPT, UPT, UR15, 0x8600, URZ ;
+        /*4370*/ NOP ;
+        /*4380*/ UIADD3 UR14, UPT, UPT, UR14, 0x20, URZ ;
+        /*4390*/ R2UR UR19, R2 ;
+        /*43a0*/ UIADD3 UR7, UPT, UPT, UR15, 0x8620, URZ ;
+        /*43b0*/ R2UR UR20, R3 ;
+        /*43c0*/ USHF.R.U32.HI UR6, URZ, 0x4, UR6 ;
+        /*43d0*/ USHF.R.U32.HI UR7, URZ, 0x4, UR7 ;
+        /*43e0*/ USHF.R.U32.HI UR14, URZ, 0x4, UR14 ;
+        /*43f0*/ ULOP3.LUT UR12, UR12, 0x3fe0, URZ, 0xc0, !UPT ;
+        /*4400*/ ULOP3.LUT UR6, UR6, 0x3fff, URZ, 0xc0, !UPT ;
+        /*4410*/ ULOP3.LUT UR10, UR7, 0x3fff, URZ, 0xc0, !UPT ;
+        /*4420*/ ULOP3.LUT UR14, UR14, 0x3fe2, URZ, 0xc0, !UPT ;
+        /*4430*/ UIADD3 UR18, UPT, UPT, UR8, 0x13268, URZ ;
+        /*4440*/ UMOV UR16, 0x0 ;
+        /*4450*/ UMOV UR17, 0x8200010 ;
+        /*4460*/ UMOV UR13, 0x80004020 ;
+        /*4470*/ UMOV UR7, 0x80004020 ;
+        /*4480*/ UMOV UR11, 0x80004020 ;
+        /*4490*/ UMOV UR15, 0x80004020 ;
+        /*44a0*/ UTCQMMA gdesc[UR6], gdesc[UR12], tmem[UR19], tmem[UR16], idesc[UR17], !UPT ;
+        /*44b0*/ UTCQMMA gdesc[UR10], gdesc[UR14], tmem[UR20], tmem[UR16], idesc[UR17], UPT ;
+        /*44c0*/ UTCBAR [UR18], URZ ;
+        /*44d0*/ NOP ;
+.L_x_38:
+        /*44e0*/ SYNCS.ARRIVE.TRANS64.A1T0 RZ, [UR22+0x13218], RZ ;
+        /*44f0*/ ISETP.NE.U32.AND P0, PT, R0, UR4, PT ;
+        /*4500*/ UIADD3 UR5, UPT, UPT, UR9, UR5, URZ ;
+        /*4510*/ UIADD3 UR30, UPT, UPT, UR30, 0x80, URZ ;
+        /*4520*/ UIADD3 UR4, UPT, UPT, UR4, 0x1, URZ ;
+        /*4530*/ @!P0 EXIT ;
+        /*4540*/ BRA `(.L_x_50) ;
+.L_x_7:
+        /*4550*/ NOP ;
+        /*4560*/ USETMAXREG.DEALLOC.CTAPOOL 0x28;
+        /*4570*/ EXIT ;
+.L_x_12:
+        /*4580*/ IMAD.U32 R2, RZ, RZ, UR15 ;
+        /*4590*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13218], R5 ;
+        /*45a0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*45b0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13218], R5 ;
+        /*45c0*/ @!P0 BRA `(.L_x_12) ;
+        /*45d0*/ BRA `(.L_x_51) ;
+.L_x_16:
+        /*45e0*/ IMAD.U32 R3, RZ, RZ, UR22 ;
+        /*45f0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*4600*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4610*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*4620*/ @!P0 BRA `(.L_x_16) ;
+        /*4630*/ BRA `(.L_x_52) ;
+.L_x_17:
+        /*4640*/ IMAD.U32 R3, RZ, RZ, UR38 ;
+        /*4650*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*4660*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4670*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*4680*/ @!P0 BRA `(.L_x_17) ;
+        /*4690*/ BRA `(.L_x_53) ;
+.L_x_18:
+        /*46a0*/ IMAD.U32 R3, RZ, RZ, UR40 ;
+        /*46b0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*46c0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*46d0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*46e0*/ @!P0 BRA `(.L_x_18) ;
+        /*46f0*/ BRA `(.L_x_54) ;
+.L_x_19:
+        /*4700*/ IMAD.U32 R3, RZ, RZ, UR37 ;
+        /*4710*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*4720*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4730*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*4740*/ @!P0 BRA `(.L_x_19) ;
+        /*4750*/ BRA `(.L_x_55) ;
+.L_x_21:
+        /*4760*/ IMAD.U32 R3, RZ, RZ, UR20 ;
+        /*4770*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*4780*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4790*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*47a0*/ @!P0 BRA `(.L_x_21) ;
+        /*47b0*/ BRA `(.L_x_56) ;
+.L_x_22:
+        /*47c0*/ IMAD.U32 R3, RZ, RZ, UR7 ;
+        /*47d0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*47e0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*47f0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*4800*/ @!P0 BRA `(.L_x_22) ;
+        /*4810*/ BRA `(.L_x_57) ;
+.L_x_23:
+        /*4820*/ IMAD.U32 R3, RZ, RZ, UR11 ;
+        /*4830*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13248], R2 ;
+        /*4840*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4850*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13248], R2 ;
+        /*4860*/ @!P0 BRA `(.L_x_23) ;
+        /*4870*/ BRA `(.L_x_58) ;
+.L_x_27:
+        /*4880*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P2, [R164+URZ+0x13200], R7 ; // 轮询检查 full_kv_barriers[kv_stage_idx] 是否已到当前 phase；未就绪则 P2=0，继续在 .L_x_27 里睡眠后重试
+        /*4890*/ @!P2 NANOSLEEP.SYNCS 0x989680 ; // 如果 full_kv_barrier 仍未 ready，则短暂休眠/让出等待资源，避免持续忙等
+        /*48a0*/ @!P2 SYNCS.PHASECHK.TRANS64 P2, [R164+URZ+0x13200], R7 ; // 如果上次还未 ready，休眠后再次检查 full_kv_barriers[kv_stage_idx] 是否到达当前 phase，并更新 P2
+        /*48b0*/ @!P2 BRA `(.L_x_27) ;  // 如果 full_kv_barrier 还没 ready，就跳回 .L_x_27 继续等待重试
+        /*48c0*/ BRA `(.L_x_59) ; // full_kv_barrier 已 ready，跳出等待慢路径，进入后续 KV 处理主流程
+.L_x_29:
+        /*48d0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R4+URZ+0x13230], R7 ;
+        /*48e0*/ @!P1 NANOSLEEP.SYNCS 0x989680 ;
+        /*48f0*/ @!P1 SYNCS.PHASECHK.TRANS64 P1, [R4+URZ+0x13230], R7 ;
+        /*4900*/ @!P1 BRA `(.L_x_29) ;
+        /*4910*/ BRA `(.L_x_60) ;
+.L_x_30:
+        /*4920*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P1, [R176+URZ+0x13260], R5 ;
+        /*4930*/ @!P1 NANOSLEEP.SYNCS 0x989680 ;
+        /*4940*/ @!P1 SYNCS.PHASECHK.TRANS64 P1, [R176+URZ+0x13260], R5 ;
+        /*4950*/ @!P1 BRA `(.L_x_30) ;
+        /*4960*/ BRA `(.L_x_61) ;
+.L_x_37:
+        /*4970*/ IMAD.U32 R2, RZ, RZ, UR22 ;
+        /*4980*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13200], R5 ;
+        /*4990*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*49a0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13200], R5 ;
+        /*49b0*/ @!P0 BRA `(.L_x_37) ;
+        /*49c0*/ BRA `(.L_x_62) ;
+.L_x_40:
+        /*49d0*/ IMAD.U32 R5, RZ, RZ, UR18 ;
+        /*49e0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R5+URZ+0x13230], R2 ;
+        /*49f0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4a00*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R5+URZ+0x13230], R2 ;
+        /*4a10*/ @!P0 BRA `(.L_x_40) ;
+        /*4a20*/ BRA `(.L_x_63) ;
+.L_x_41:
+        /*4a30*/ IMAD.U32 R2, RZ, RZ, UR8 ;
+        /*4a40*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13270], R3 ;
+        /*4a50*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4a60*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13270], R3 ;
+        /*4a70*/ @!P0 BRA `(.L_x_41) ;
+        /*4a80*/ BRA `(.L_x_64) ;
+.L_x_42:
+        /*4a90*/ IMAD.U32 R2, RZ, RZ, UR8 ;
+        /*4aa0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13278], R3 ;
+        /*4ab0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4ac0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13278], R3 ;
+        /*4ad0*/ @!P0 BRA `(.L_x_42) ;
+        /*4ae0*/ BRA `(.L_x_65) ;
+.L_x_43:
+        /*4af0*/ IMAD.U32 R5, RZ, RZ, UR24 ;
+        /*4b00*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R5+URZ+0x13230], R2 ;
+        /*4b10*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4b20*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R5+URZ+0x13230], R2 ;
+        /*4b30*/ @!P0 BRA `(.L_x_43) ;
+        /*4b40*/ BRA `(.L_x_66) ;
+.L_x_44:
+        /*4b50*/ IMAD.U32 R2, RZ, RZ, UR8 ;
+        /*4b60*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13270], R3 ;
+        /*4b70*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4b80*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13270], R3 ;
+        /*4b90*/ @!P0 BRA `(.L_x_44) ;
+        /*4ba0*/ BRA `(.L_x_67) ;
+.L_x_45:
+        /*4bb0*/ IMAD.U32 R2, RZ, RZ, UR8 ;
+        /*4bc0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R2+URZ+0x13278], R3 ;
+        /*4bd0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4be0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R2+URZ+0x13278], R3 ;
+        /*4bf0*/ @!P0 BRA `(.L_x_45) ;
+        /*4c00*/ BRA `(.L_x_68) ;
+.L_x_47:
+        /*4c10*/ IMAD.U32 R3, RZ, RZ, UR11 ;
+        /*4c20*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13230], R2 ;
+        /*4c30*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4c40*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13230], R2 ;
+        /*4c50*/ @!P0 BRA `(.L_x_47) ;
+        /*4c60*/ BRA `(.L_x_69) ;
+.L_x_48:
+        /*4c70*/ IMAD.U32 R3, RZ, RZ, UR8 ;
+        /*4c80*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13270], R2 ;
+        /*4c90*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4ca0*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13270], R2 ;
+        /*4cb0*/ @!P0 BRA `(.L_x_48) ;
+        /*4cc0*/ BRA `(.L_x_70) ;
+.L_x_49:
+        /*4cd0*/ IMAD.U32 R3, RZ, RZ, UR8 ;
+        /*4ce0*/ SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [R3+URZ+0x13278], R2 ;
+        /*4cf0*/ @!P0 NANOSLEEP.SYNCS 0x989680 ;
+        /*4d00*/ @!P0 SYNCS.PHASECHK.TRANS64 P0, [R3+URZ+0x13278], R2 ;
+        /*4d10*/ @!P0 BRA `(.L_x_49) ;
+        /*4d20*/ BRA `(.L_x_71) ;
+        .type           $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc,@function
+        .size           $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc,($__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced - $__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc)
+$__internal_0_$__cuda_sm10x_tcgen05_guardrail_trap_col_being_dealloced_not_returned_by_alloc:
+        /*4d30*/ BPT.TRAP 0x1 ;
+        /*4d40*/ IMAD.MOV.U32 R3, RZ, RZ, 0x0 ;
+        /*4d50*/ RET.REL.NODEC R2 `(_ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_) ;
+        .type           $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced,@function
+        .size           $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced,(.L_x_73 - $__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced)
+$__internal_1_$__cuda_sm10x_tcgen05_guardrail_trap_unallocated_columns_being_dealloced:
+        /*4d60*/ BPT.TRAP 0x1 ;
+        /*4d70*/ IMAD.MOV.U32 R3, RZ, RZ, 0x0 ;
+        /*4d80*/ RET.REL.NODEC R2 `(_ZN9deep_gemm20sm100_fp8_mqa_logitsILj32ELj64ELb0ELj4ELj256ELj3ELj3ELj128ELj128ELj256EfLj2EEEvjjjjPjS1_PT9_14CUtensorMap_stS4_S4_S4_) ;
+.L_x_72:
+        /*4d90*/ BRA `(.L_x_72);
+        /*4da0*/ NOP;
+        /*4db0*/ NOP;
+        /*4dc0*/ NOP;
+        /*4dd0*/ NOP;
+        /*4de0*/ NOP;
+        /*4df0*/ NOP;
+        /*4e00*/ NOP;
+        /*4e10*/ NOP;
+        /*4e20*/ NOP;
+        /*4e30*/ NOP;
+        /*4e40*/ NOP;
+        /*4e50*/ NOP;
+        /*4e60*/ NOP;
+        /*4e70*/ NOP;
+.L_x_73:
+
+
+//--------------------- SYMBOLS --------------------------
+
+	.type		.nv.reservedSmem.offset0,@object
+	.size		.nv.reservedSmem.offset0,0x4
+	.type		.nv.reservedSmem.cap,@object
+	.size		.nv.reservedSmem.cap,0x4
